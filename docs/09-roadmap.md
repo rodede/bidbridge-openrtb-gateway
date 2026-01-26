@@ -51,23 +51,25 @@
 Use codex.md to select context.
 Follow AGENTS.md rules.
 Implement MVP only.
-
-Task:
-<...>
 ```
 
-- Implement the OpenRTB HTTP endpoint
-- Implement request parsing/validation/normalization
-- Implement adapter framework (interfaces + mock adapter)
-- Implement response merger and winner selection
-- Implement rules engine (routing + business logic)
-- Implement observability (metrics + tracing + logging)
-- Implement SSP simulator (client + replay + QPS control)
-- Add performance + security hardening
-- Write docs / polish README / finalize milestone
-- Set up GitHub Actions CI  
-- Add badges (build, license, Java version)
+### Task list
+#### OpenRTB API MVP: 
+endpoint + request parsing/validation with 2.6/2.5 compatibility and basic error handling
+#### Normalization layer: 
+map OpenRTB request into internal model (2.6-first), fail-fast validations
+#### Adapter framework: 
+define interfaces, adapter registry, mock/simulator adapter, timeout handling
+####  Response merger: 
+collect adapter bids, select winner, build OpenRTB response
+####  Rules engine MVP: 
+routing and simple business rules (floors/filters), config loading
+#### Observability: 
+metrics/tracing/logging integration per docs
+####  SSP simulator tooling: 
+client + replay + QPS control for integration/load testing
+#### Performance + security hardening:
+limits, rate limiting, validation, Netty tuning
+####  Docs/README polish + milestone readiness; CI setup + badges
+
 ---
-
-
-
