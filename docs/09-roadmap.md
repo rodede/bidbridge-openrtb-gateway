@@ -46,8 +46,16 @@
 
 ## Tasks examples
 
-- Set up GitHub Actions CI  
-- Add badges (build, license, Java version)
+### Golden prompt
+```
+Use codex.md to select context.
+Follow AGENTS.md rules.
+Implement MVP only.
+
+Task:
+<...>
+```
+
 - Implement the OpenRTB HTTP endpoint
 - Implement request parsing/validation/normalization
 - Implement adapter framework (interfaces + mock adapter)
@@ -57,7 +65,8 @@
 - Implement SSP simulator (client + replay + QPS control)
 - Add performance + security hardening
 - Write docs / polish README / finalize milestone
-
+- Set up GitHub Actions CI  
+- Add badges (build, license, Java version)
 ---
 
 
