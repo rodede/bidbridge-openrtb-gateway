@@ -1,6 +1,6 @@
 # AI Agent Guidelines — BidBridge
 
-This repository contains a Java OpenRTB 2.5 gateway built with Spring Boot WebFlux.
+This repository contains a Java OpenRTB 2.6 gateway built with Spring Boot WebFlux.
 The system is performance-critical and latency-sensitive.
 
 ## Core Rules (Always On)

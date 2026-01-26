@@ -1,6 +1,6 @@
 # BidBridge — OpenRTB Gateway
 
-BidBridge is a lightweight, low-latency OpenRTB 2.5 bidding gateway built in Java.
+BidBridge is a lightweight, low-latency OpenRTB 2.6 bidding gateway built in Java.
 
 It provides a unified layer for normalizing bid requests, applying business rules, and routing traffic to multiple demand sources.
 

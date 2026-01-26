@@ -12,9 +12,15 @@ For audio/video, creative is typically embedded as **VAST XML in `adm`** and ret
 
 ## Request
 
-- Must comply with OpenRTB 2.5
+- Must comply with OpenRTB 2.6
 - Must contain at least one impression
 - Supports banner, audio, and video
+
+Backward compatibility:
+- OpenRTB **2.5 requests are fully accepted**
+- 2.5 is treated as a **subset of 2.6**
+- Unknown fields are ignored and preserved via `ext`
+- Requests MUST NOT be rejected based on minor version
 
 ---
 
@@ -31,7 +37,7 @@ For audio/video, creative is typically embedded as **VAST XML in `adm`** and ret
 
 ## Headers
 
-- X-OpenRTB-Version: 2.5
+- X-OpenRTB-Version: 2.6
 - Accept-Encoding: gzip
 
 ---

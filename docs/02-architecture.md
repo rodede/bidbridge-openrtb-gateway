@@ -28,6 +28,8 @@ SSP
 - Performs initial validation
 
 ### Normalization Layer
+Normalization must support OpenRTB 2.5 and 2.6.
+The internal model follows 2.6; missing fields default safely.
 - Converts raw OpenRTB into internal model
 - Extracts relevant attributes
 - Preserves extensions
