@@ -19,8 +19,8 @@
 
     <!-- Modules -->
     <modules>
-        <!-- 
         <module>bidbridge-engine</module>
+        <!--
         <module>bidbridge-simulator</module>
         <module>bidbridge-console</module> 
         -->
