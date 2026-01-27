@@ -39,17 +39,6 @@ opentelemetry: Tracing (often via OpenTelemetry Java agent rather than a depende
 
 ### Ohers
 
-#### Logging
-```
-    private static final Logger log =
-        LoggerFactory.getLogger(BidController.class);
-
-    log.info("Started processing request");
-    log.warn("Slow adapter");
-    log.error("Adapter failed", ex);
-
-```
-
 #### How Spring Validation Works (Basics)
 
 Spring uses Jakarta Bean Validation (JSR 380).
@@ -105,10 +94,13 @@ wire validation into your normalizer layer!
 
 
 
-### Others
+### Implementations
+#### [step1] OpenRTB API MVP #1
+Implemented minimal OpenRTB models + reactive controller/service + validation error handling, and added unit tests (including a 2.5-compatible request case). Core changes are in the new API/domain/service packages and the new tests.
 
+TODO: Extend service stub with routing/adapter flow once rules/adapters are defined
 
-
+#### Others
 CI
 GitHub Actions: build + tests on PR
 Cache Maven repo
