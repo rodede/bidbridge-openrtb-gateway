@@ -101,3 +101,35 @@ public class ValidationHandler {
 }
 ```
 wire validation into your normalizer layer!
+
+
+
+
+### Others
+
+
+
+CI
+GitHub Actions: build + tests on PR
+Cache Maven repo
+
+Quality gates
+JUnit 5 + Mockito baseline
+Testcontainers (optional later, but wire the deps now)
+JaCoCo coverage report (even if no strict threshold)
+
+Runtime basics (Spring WebFlux)
+Global error handler (@RestControllerAdvice) with clean 400/500 mapping
+Request size limits + timeouts
+Structured logging (JSON) + request-id in MDC
+Observability (MVP level)
+Micrometer + Prometheus endpoint (/actuator/prometheus)
+Basic metrics: request count, latency, no-bid, errors, adapter timeouts
+Health endpoints via Actuator
+Config + boundaries
+Typed config (@ConfigurationProperties)
+Clear packages: api / domain / normalize / rules / adapters / observability
+DTO vs internal model separation (don’t mix)
+HTTPS-ready, rate limiting placeholder (even if stub)
+Dependabot (or Renovate) for deps updates
+
