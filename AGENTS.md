@@ -16,7 +16,6 @@ The system is performance-critical and latency-sensitive.
 ## Code Expectations
 
 - Language: Java 25, Spring Boot 4, WebFlux
-- Java code style is formatted using **Google Java Format**
 - Follow existing package and naming conventions
 - Fail fast on invalid OpenRTB input
 - Write unit tests for core logic; add integration tests when relevant
