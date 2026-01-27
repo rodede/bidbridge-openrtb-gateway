@@ -9,6 +9,7 @@ Use it to select the right context document(s) for the task you are implementing
 - Prefer small context packs:
   - Always include: `codex.md`
   - Then include: only 1–3 docs relevant to the current task
+- Plan the work first; after confirmation, start implementation.
 - If using IntelliJ AI/Copilot:
   - Open `codex.md` + relevant docs + the target source file(s)
   - Ask the assistant to implement based on the open documents
@@ -19,6 +20,7 @@ Use it to select the right context document(s) for the task you are implementing
 
 All requirements are split into purpose-focused documents:
 
+- `docs/00-implementation-details.md` — MVP implementation specifics 
 - `docs/01-vision-and-scope.md` — Product vision, goals, scope, phases, out-of-scope
 - `docs/02-architecture.md` — Components, data flow, responsibilities, constraints
 - `docs/03-api-contract.md` — Endpoints, status codes, request/response rules, examples
@@ -41,7 +43,3 @@ When implementing any module, produce:
 - Integration tests where applicable
 - Minimal docs/comments where needed (avoid verbose commentary in code)
 - No premature overengineering: implement MVP first
-
-
-
-

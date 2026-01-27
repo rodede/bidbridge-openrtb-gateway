@@ -33,6 +33,7 @@ The internal model follows 2.6; missing fields default safely.
 - Converts raw OpenRTB into internal model
 - Extracts relevant attributes
 - Preserves extensions
+See `docs/00-implementation-details.md` for normalization rules, defaults, and pass-through behavior.
 
 ### Rules Engine
 - Applies routing and filtering logic
@@ -62,3 +63,7 @@ The internal model follows 2.6; missing fields default safely.
 - Clear module boundaries
 - Fail-fast validation
 
+### Validation Boundaries
+
+- API layer: schema/shape validation (JSON + required fields)
+- Normalization layer: business validation and defaults

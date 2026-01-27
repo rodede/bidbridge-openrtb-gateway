@@ -9,6 +9,7 @@ Build a lightweight, reliable, and extensible OpenRTB bidding gateway that enabl
 ## Primary Objectives
 
 - Provide a compliant OpenRTB 2.6 bidder endpoint
+- Accept OpenRTB 2.5 as a compatible subset
 - Maintain sub-50ms processing latency
 - Support pluggable bidder integrations
 - Enable controlled experimentation

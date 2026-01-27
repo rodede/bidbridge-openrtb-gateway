@@ -11,7 +11,6 @@ The system is performance-critical and latency-sensitive.
 - Use **non-blocking, reactive** patterns only (WebFlux / Reactor)
 - Optimize for **low latency and low allocation**
 - Keep modules cleanly separated (API / domain / rules / adapters / observability)
-- Design and plan the work first, after confirmation start the implementation and coding 
 
 ## Code Expectations
 
