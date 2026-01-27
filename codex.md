@@ -41,3 +41,11 @@ When implementing any module, produce:
 - Integration tests where applicable
 - Minimal docs/comments where needed (avoid verbose commentary in code)
 - No premature overengineering: implement MVP first
+
+## Code Style
+
+- Java code is formatted using **Google Java Format**
+- Formatting is applied **locally in IntelliJ**
+
+
+
