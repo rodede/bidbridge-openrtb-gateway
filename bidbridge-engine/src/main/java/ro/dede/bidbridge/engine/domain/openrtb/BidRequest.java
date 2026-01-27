@@ -13,7 +13,12 @@ import java.util.Map;
 public record BidRequest(
         @NotBlank String id,
         @NotEmpty List<@Valid Imp> imp,
+        Site site,
+        App app,
+        Device device,
+        User user,
+        Regs regs,
         Integer tmax,
         Map<String, Object> ext
-) {
+) implements HasExt {
 }

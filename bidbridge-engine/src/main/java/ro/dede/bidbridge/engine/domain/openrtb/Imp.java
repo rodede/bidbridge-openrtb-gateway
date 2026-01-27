@@ -1,11 +1,19 @@
 package ro.dede.bidbridge.engine.domain.openrtb;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 
-// Minimal impression model; unknown fields are ignored for 2.5/2.6 compatibility.
+import java.util.Map;
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record Imp(
-        @NotBlank String id
-) {
+        @NotBlank String id,
+        Banner banner,
+        Video video,
+        Audio audio,
+        @JsonProperty("native") Native nativeObject,
+        Double bidfloor,
+        Map<String, Object> ext
+) implements HasExt {
 }

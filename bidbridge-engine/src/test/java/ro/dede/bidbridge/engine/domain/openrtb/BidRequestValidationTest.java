@@ -14,7 +14,17 @@ class BidRequestValidationTest {
 
     @Test
     void rejectsMissingId() {
-        var request = new BidRequest("", List.of(new Imp("1")), null, null);
+        var request = new BidRequest("", List.of(new Imp("1", null, null, null, null, null, null)),
+                new Site(null), null, null, null, null, null, null);
+        var violations = validator.validate(request);
+
+        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("id")));
+    }
+
+    @Test
+    void rejectsNullId() {
+        var request = new BidRequest(null, List.of(new Imp("1", null, null, null, null, null, null)),
+                new Site(null), null, null, null, null, null, null);
         var violations = validator.validate(request);
 
         assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("id")));
@@ -22,7 +32,15 @@ class BidRequestValidationTest {
 
     @Test
     void rejectsEmptyImp() {
-        var request = new BidRequest("req-1", List.of(), null, null);
+        var request = new BidRequest("req-1", List.of(), new Site(null), null, null, null, null, null, null);
+        var violations = validator.validate(request);
+
+        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("imp")));
+    }
+
+    @Test
+    void rejectsNullImp() {
+        var request = new BidRequest("req-1", null, new Site(null), null, null, null, null, null, null);
         var violations = validator.validate(request);
 
         assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("imp")));
@@ -30,7 +48,8 @@ class BidRequestValidationTest {
 
     @Test
     void rejectsBlankImpId() {
-        var request = new BidRequest("req-1", List.of(new Imp("")), null, null);
+        var request = new BidRequest("req-1", List.of(new Imp("", null, null, null, null, null, null)),
+                new Site(null), null, null, null, null, null, null);
         var violations = validator.validate(request);
 
         assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().contains("imp")));
