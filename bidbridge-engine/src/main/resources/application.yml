@@ -18,3 +18,11 @@ logging:
   level:
     root: INFO
     ro.dede.bidbridge.engine: INFO
+
+adapters:
+  simulator:
+    enabled: true
+    timeoutMs: 80
+    bidProbability: 1.0
+    fixedPrice: 1.5
+    admTemplate: "<vast/>"

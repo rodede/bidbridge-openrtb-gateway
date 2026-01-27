@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.server.ServerWebInputException;
 import ro.dede.bidbridge.engine.normalization.InvalidRequestException;
+import ro.dede.bidbridge.engine.service.AdapterFailureException;
+import ro.dede.bidbridge.engine.service.ConfigurationException;
 import ro.dede.bidbridge.engine.service.OverloadException;
 
 import java.util.stream.Collectors;
@@ -52,6 +54,26 @@ public class ApiErrorHandler {
     public ResponseEntity<ErrorResponse> handleOverload(OverloadException ex) {
         var message = ex.getMessage() == null || ex.getMessage().isBlank()
                 ? "Overloaded"
+                : ex.getMessage();
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
+                .body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(AdapterFailureException.class)
+    public ResponseEntity<ErrorResponse> handleAdapterFailure(AdapterFailureException ex) {
+        var message = ex.getMessage() == null || ex.getMessage().isBlank()
+                ? "Adapter failure"
+                : ex.getMessage();
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
+                .body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(ConfigurationException.class)
+    public ResponseEntity<ErrorResponse> handleConfiguration(ConfigurationException ex) {
+        var message = ex.getMessage() == null || ex.getMessage().isBlank()
+                ? "Configuration error"
                 : ex.getMessage();
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
