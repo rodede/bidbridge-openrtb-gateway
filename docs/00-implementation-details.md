@@ -51,3 +51,31 @@ The gateway normalizes incoming OpenRTB requests into a 2.6-first internal model
 ### Device fields kept
 
 - `ua`, `ip`, `os`, `devicetype` (plus `device.ext`)
+
+---
+
+## Adapter Framework (MVP)
+
+### Configuration
+
+Configured under `adapters.<adapterName>`:
+
+- `enabled` (boolean)
+- `endpoint` (string, optional)
+- `timeoutMs` (integer, optional)
+- `bidProbability` (double, default `1.0`)
+- `fixedPrice` (double, optional)
+- `admTemplate` (string, optional)
+
+### Timeouts and budget
+
+- Adapter timeout uses `min(adapter.timeoutMs, request.tmaxMs - reserve)`
+- Timeouts are treated as no-bid for response selection
+- If all adapters time out, return 503 (overload)
+- If all adapters error, return 503 (adapter failure)
+- If no adapters are enabled, return 503 (configuration error)
+
+### Result model
+
+- Store: status, latency, bidder name, selected bid, lightweight debug fields
+- Do not store raw responses (log only)
