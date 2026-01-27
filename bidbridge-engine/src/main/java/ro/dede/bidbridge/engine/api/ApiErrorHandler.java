@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.server.ServerWebInputException;
+import ro.dede.bidbridge.engine.normalization.InvalidRequestException;
+import ro.dede.bidbridge.engine.service.OverloadException;
 
 import java.util.stream.Collectors;
 
@@ -34,5 +36,32 @@ public class ApiErrorHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                 .body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(InvalidRequestException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidRequest(InvalidRequestException ex) {
+        var message = ex.getMessage() == null || ex.getMessage().isBlank()
+                ? "Invalid request"
+                : ex.getMessage();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
+                .body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(OverloadException.class)
+    public ResponseEntity<ErrorResponse> handleOverload(OverloadException ex) {
+        var message = ex.getMessage() == null || ex.getMessage().isBlank()
+                ? "Overloaded"
+                : ex.getMessage();
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
+                .body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
+                .body(new ErrorResponse("Internal error: " + ex.getMessage()));
     }
 }
