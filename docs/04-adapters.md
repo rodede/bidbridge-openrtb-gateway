@@ -18,6 +18,9 @@ Responsibilities:
 - Parse response
 - Map to internal model
 
+HTTP adapters use an internal `HttpBidderClient` abstraction (WebClient-based by default) so the
+HTTP stack can be swapped later without changing adapter logic.
+
 ---
 
 ## Lifecycle
@@ -41,6 +44,7 @@ Responsibilities:
 ## Reference Adapters
 
 - SimulatorAdapter
+- SimulatorHttpAdapter
 - StaticBidAdapter
 - ReplayAdapter
 - ExternalDSPAdapter (mocked)
