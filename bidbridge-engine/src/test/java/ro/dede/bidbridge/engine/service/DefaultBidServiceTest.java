@@ -6,15 +6,18 @@ import ro.dede.bidbridge.engine.adapters.AdapterProperties;
 import ro.dede.bidbridge.engine.adapters.AdapterRegistry;
 import ro.dede.bidbridge.engine.adapters.BidderAdapter;
 import ro.dede.bidbridge.engine.domain.adapter.AdapterResult;
+import ro.dede.bidbridge.engine.domain.adapter.AdapterResultStatus;
 import ro.dede.bidbridge.engine.domain.adapter.SelectedBid;
 import ro.dede.bidbridge.engine.domain.normalized.*;
 import ro.dede.bidbridge.engine.rules.DefaultRulesEvaluator;
 import ro.dede.bidbridge.engine.rules.RulesProperties;
 import ro.dede.bidbridge.engine.merger.DefaultResponseMerger;
+import ro.dede.bidbridge.engine.merger.ResponseMerger;
 import ro.dede.bidbridge.engine.observability.MetricsCollector;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -90,6 +93,29 @@ class DefaultBidServiceTest {
     }
 
     @Test
+    void mapsBadBidderResponseToAdapterErrorCode() {
+        var properties = new AdapterProperties();
+        properties.getConfigs().put("a", enabledConfig());
+
+        BidderAdapter adapterA = (request, context) -> Mono.error(new BadBidderResponseException("bad response"));
+
+        var registry = new AdapterRegistry(Map.of("a", adapterA), properties);
+        var recorder = new RecordingResponseMerger();
+        var service = new DefaultBidService(registry, rulesEvaluator(), recorder, metricsCollector());
+
+        var result = service.bid(sampleRequest()).blockOptional();
+
+        assertTrue(result.isEmpty());
+        var results = recorder.results.get();
+        assertNotNull(results);
+        assertEquals(1, results.size());
+        var adapterResult = results.getFirst();
+        assertEquals(AdapterResultStatus.ERROR, adapterResult.status());
+        assertNotNull(adapterResult.debug());
+        assertEquals("bad_bidder_response", adapterResult.debug().errorCode());
+    }
+
+    @Test
     void throwsConfigurationWhenNoAdaptersEnabled() {
         var properties = new AdapterProperties();
         var registry = new AdapterRegistry(Map.of(), properties);
@@ -158,5 +184,18 @@ class DefaultBidServiceTest {
 
     private MetricsCollector metricsCollector() {
         return new MetricsCollector(new io.micrometer.core.instrument.simple.SimpleMeterRegistry());
+    }
+
+    private static final class RecordingResponseMerger implements ResponseMerger {
+        private final AtomicReference<List<AdapterResult>> results = new AtomicReference<>();
+
+        @Override
+        public Mono<ro.dede.bidbridge.engine.domain.openrtb.BidResponse> merge(
+                NormalizedBidRequest request,
+                List<AdapterResult> results
+        ) {
+            this.results.set(results);
+            return Mono.empty();
+        }
     }
 }

@@ -37,6 +37,10 @@ public class MetricsCollector {
         registry.counter("adapter_timeouts", "adapter", adapter).increment();
     }
 
+    public void recordAdapterBadResponse(String adapter) {
+        registry.counter("adapter_bad_response", "adapter", adapter).increment();
+    }
+
     public void recordAdapterError(String adapter) {
         registry.counter("adapter_errors", "adapter", adapter).increment();
     }

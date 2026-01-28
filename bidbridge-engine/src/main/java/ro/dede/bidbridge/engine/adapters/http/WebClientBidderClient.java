@@ -39,6 +39,9 @@ public class WebClientBidderClient implements HttpBidderClient<BidResponse> {
                     if (status == 204) {
                         return Mono.just(new HttpBidderResponse<>(status, null, responseSize));
                     }
+                    if (status >= 400) {
+                        return Mono.error(new BadBidderResponseException("Bidder returned HTTP " + status));
+                    }
                     return response.bodyToMono(BidResponse.class)
                             .map(this::validateResponse)
                             .onErrorMap(DecodingException.class,

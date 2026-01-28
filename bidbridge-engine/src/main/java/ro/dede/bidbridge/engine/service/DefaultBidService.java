@@ -74,18 +74,18 @@ public class DefaultBidService implements BidService {
                 .bid(request, context)
                 .timeout(Duration.ofMillis(timeoutMs))
                 .onErrorResume(BadBidderResponseException.class, ex -> {
-                    metrics.recordAdapterError(entry.name());
-                    return Mono.just(AdapterResult.error(entry.name(), "bad_bidder_response", ex.getMessage()));
-                }).
-                onErrorResume(TimeoutException.class, ex -> {
+                    metrics.recordAdapterBadResponse(entry.name());
+                    return Mono.just(AdapterResult.error(entry.name(), "bad_bidder_response", messageOrDefault(ex, "Bad bidder response")));
+                })
+                .onErrorResume(TimeoutException.class, ex -> {
                     metrics.recordAdapterTimeout(entry.name());
                     return Mono.just(AdapterResult.timeout(entry.name()));
-                }).
-                onErrorResume(ex -> {
+                })
+                .onErrorResume(ex -> {
                     metrics.recordAdapterError(entry.name());
-                    return Mono.just(AdapterResult.error(entry.name(), "adapter_error", ex.getMessage()));
-                }).
-                map(result -> result.withLatencyMs(toMillis(start)));
+                    return Mono.just(AdapterResult.error(entry.name(), "adapter_error", messageOrDefault(ex, "Adapter error")));
+                })
+                .map(result -> result.withLatencyMs(toMillis(start)));
     }
 
     /**
@@ -93,5 +93,10 @@ public class DefaultBidService implements BidService {
      */
     private long toMillis(long startNanos) {
         return (System.nanoTime() - startNanos) / 1_000_000L;
+    }
+
+    private String messageOrDefault(Throwable ex, String fallback) {
+        var message = ex.getMessage();
+        return message == null || message.isBlank() ? fallback : message;
     }
 }

@@ -74,7 +74,7 @@ class DefaultBidRequestNormalizerTest {
         var highNormalized = normalizer.normalize(highRequest).block();
 
         assertNotNull(highNormalized);
-        assertEquals(1000, highNormalized.tmaxMs());
+        assertEquals(5000, highNormalized.tmaxMs());
     }
 
     @Test
