@@ -2,7 +2,6 @@ package ro.dede.bidbridge.engine.api;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest;
@@ -20,12 +19,10 @@ import ro.dede.bidbridge.engine.service.OverloadException;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @WebFluxTest(controllers = BidController.class)
 @Import({ApiErrorHandler.class, BidControllerTest.TestConfig.class})
@@ -35,14 +32,15 @@ class BidControllerTest {
     private WebTestClient webTestClient;
 
     @Autowired
-    private BidService bidService;
+    private StubBidService bidService;
 
     @Autowired
-    private BidRequestNormalizer bidRequestNormalizer;
+    private StubBidRequestNormalizer bidRequestNormalizer;
 
     @BeforeEach
     void setUp() {
-        Mockito.reset(bidService, bidRequestNormalizer);
+        bidService.reset();
+        bidRequestNormalizer.reset();
     }
 
     @Test
@@ -55,8 +53,8 @@ class BidControllerTest {
                 "USD"
         );
 
-        when(bidRequestNormalizer.normalize(any())).thenReturn(Mono.just(sampleNormalizedRequest()));
-        when(bidService.bid(any())).thenReturn(Mono.just(response));
+        bidRequestNormalizer.setNext(Mono.just(sampleNormalizedRequest()));
+        bidService.setNext(Mono.just(response));
 
         webTestClient.post()
                 .uri("/openrtb2/bid")
@@ -74,8 +72,8 @@ class BidControllerTest {
         var request = new BidRequest("req-1", List.of(new Imp("1", null, null, null, null, null, null)),
                 new ro.dede.bidbridge.engine.domain.openrtb.Site(null), null, null, null, null, null, null);
 
-        when(bidRequestNormalizer.normalize(any())).thenReturn(Mono.just(sampleNormalizedRequest()));
-        when(bidService.bid(any())).thenReturn(Mono.empty());
+        bidRequestNormalizer.setNext(Mono.just(sampleNormalizedRequest()));
+        bidService.setNext(Mono.empty());
 
         webTestClient.post()
                 .uri("/openrtb2/bid")
@@ -107,8 +105,8 @@ class BidControllerTest {
         var request = new BidRequest("req-1", List.of(new Imp("1", null, null, null, null, null, null)),
                 new ro.dede.bidbridge.engine.domain.openrtb.Site(null), null, null, null, null, null, null);
 
-        when(bidRequestNormalizer.normalize(any())).thenReturn(Mono.just(sampleNormalizedRequest()));
-        when(bidService.bid(any())).thenReturn(Mono.error(new OverloadException("overload")));
+        bidRequestNormalizer.setNext(Mono.just(sampleNormalizedRequest()));
+        bidService.setNext(Mono.error(new OverloadException("overload")));
 
         webTestClient.post()
                 .uri("/openrtb2/bid")
@@ -126,7 +124,7 @@ class BidControllerTest {
         var request = new BidRequest("req-1", List.of(new Imp("1", null, null, null, null, null, null)),
                 new ro.dede.bidbridge.engine.domain.openrtb.Site(null), null, null, null, null, null, null);
 
-        when(bidRequestNormalizer.normalize(any())).thenReturn(Mono.error(new InvalidRequestException("bad")));
+        bidRequestNormalizer.setNext(Mono.error(new InvalidRequestException("bad")));
 
         webTestClient.post()
                 .uri("/openrtb2/bid")
@@ -144,8 +142,8 @@ class BidControllerTest {
         var request = new BidRequest("req-1", List.of(new Imp("1", null, null, null, null, null, null)),
                 new ro.dede.bidbridge.engine.domain.openrtb.Site(null), null, null, null, null, null, null);
 
-        when(bidRequestNormalizer.normalize(any())).thenReturn(Mono.just(sampleNormalizedRequest()));
-        when(bidService.bid(any())).thenReturn(Mono.error(new RuntimeException("boom")));
+        bidRequestNormalizer.setNext(Mono.just(sampleNormalizedRequest()));
+        bidService.setNext(Mono.error(new RuntimeException("boom")));
 
         webTestClient.post()
                 .uri("/openrtb2/bid")
@@ -154,8 +152,8 @@ class BidControllerTest {
                 .exchange()
                 .expectStatus().isEqualTo(500)
                 .expectHeader().valueEquals("X-OpenRTB-Version", "2.6")
-                .expectBody()
-                .jsonPath("$.error").isEqualTo("Internal error: boom");
+        .expectBody()
+                .jsonPath("$.error").isEqualTo("Internal error");
     }
 
     @Test
@@ -176,8 +174,8 @@ class BidControllerTest {
                 }
                 """;
 
-        when(bidRequestNormalizer.normalize(any())).thenReturn(Mono.just(sampleNormalizedRequest()));
-        when(bidService.bid(any())).thenReturn(Mono.empty());
+        bidRequestNormalizer.setNext(Mono.just(sampleNormalizedRequest()));
+        bidService.setNext(Mono.empty());
 
         webTestClient.post()
                 .uri("/openrtb2/bid")
@@ -187,9 +185,7 @@ class BidControllerTest {
                 .expectStatus().isNoContent()
                 .expectHeader().valueEquals("X-OpenRTB-Version", "2.6");
 
-        var captor = org.mockito.ArgumentCaptor.forClass(BidRequest.class);
-        verify(bidRequestNormalizer).normalize(captor.capture());
-        var captured = captor.getValue();
+        var captured = bidRequestNormalizer.lastRequest.get();
         assertEquals(120, captured.tmax());
         assertNotNull(captured.ext());
         assertEquals("ssp", captured.ext().get("source"));
@@ -214,12 +210,62 @@ class BidControllerTest {
     static class TestConfig {
         @Bean
         BidService bidService() {
-            return Mockito.mock(BidService.class);
+            return new StubBidService();
         }
 
         @Bean
         BidRequestNormalizer requestNormalizer() {
-            return Mockito.mock(BidRequestNormalizer.class);
+            return new StubBidRequestNormalizer();
+        }
+
+        @Bean
+        io.micrometer.core.instrument.MeterRegistry meterRegistry() {
+            return new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
+        }
+
+        @Bean
+        ro.dede.bidbridge.engine.observability.MetricsCollector metricsCollector(
+                io.micrometer.core.instrument.MeterRegistry registry) {
+            return new ro.dede.bidbridge.engine.observability.MetricsCollector(registry);
+        }
+
+    }
+
+    static final class StubBidService implements BidService {
+        private final AtomicReference<Mono<BidResponse>> next = new AtomicReference<>(Mono.empty());
+
+        void setNext(Mono<BidResponse> result) {
+            next.set(result);
+        }
+
+        void reset() {
+            next.set(Mono.empty());
+        }
+
+        @Override
+        public Mono<BidResponse> bid(NormalizedBidRequest request) {
+            return next.get();
+        }
+    }
+
+    static final class StubBidRequestNormalizer implements BidRequestNormalizer {
+        private final AtomicReference<Mono<NormalizedBidRequest>> next =
+                new AtomicReference<>(Mono.error(new IllegalStateException("not configured")));
+        private final AtomicReference<BidRequest> lastRequest = new AtomicReference<>();
+
+        void setNext(Mono<NormalizedBidRequest> result) {
+            next.set(result);
+        }
+
+        void reset() {
+            next.set(Mono.error(new IllegalStateException("not configured")));
+            lastRequest.set(null);
+        }
+
+        @Override
+        public Mono<NormalizedBidRequest> normalize(BidRequest request) {
+            lastRequest.set(request);
+            return next.get();
         }
     }
 }

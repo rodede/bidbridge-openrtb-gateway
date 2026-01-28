@@ -9,9 +9,13 @@
 - nobids_total
 - errors_total
 - adapter_timeouts
-- latency_p95
-- latency_p99
+- request_latency (timer with p95/p99)
 
+### Tags
+
+ - requests_total: status
+ - errors_total: type
+ - adapter_timeouts: adapter
 ---
 
 ## Tracing
@@ -24,8 +28,9 @@
 
 ## Logging
 
-- Structured JSON
-- Request ID
+- Plain text (MVP), correlation ID prefixed in log pattern
+- Correlation ID propagated from Reactor context into MDC
+- Request ID (OpenRTB id)
 - Adapter name
 - Latency
 - Result code

@@ -18,6 +18,8 @@ logging:
   level:
     root: INFO
     ro.dede.bidbridge.engine: INFO
+  pattern:
+    console: "%X{correlationId:-unknown} - %d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level %logger{36} - %msg%n"
 
 adapters:
   simulator:
