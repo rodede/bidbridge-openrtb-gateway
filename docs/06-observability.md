@@ -9,6 +9,7 @@
 - nobids_total
 - errors_total
 - adapter_timeouts
+- adapter_bad_response
 - request_latency (timer with p95/p99)
 
 ### Tags
@@ -16,6 +17,7 @@
  - requests_total: status
  - errors_total: type
  - adapter_timeouts: adapter
+ - adapter_bad_response: adapter
 ---
 
 ## Tracing

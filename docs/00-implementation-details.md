@@ -59,7 +59,7 @@ The gateway normalizes incoming OpenRTB requests into a 2.6-first internal model
 
 ### Configuration
 
-Configured under `adapters.<adapterName>`:
+Configured under `adapters.configs.<adapterName>`:
 
 - `enabled` (boolean)
 - `endpoint` (string, optional)
@@ -71,8 +71,8 @@ Configured under `adapters.<adapterName>`:
 ### HTTP adapters
 
 - HTTP-based adapters use the `HttpBidderClient` abstraction (WebClient implementation by default).
-- Non-2xx responses are mapped to adapter errors with HTTP status in debug fields.
 - 204 responses map to no-bid.
+- Non-2xx responses from bidders are treated as bad responses and mapped to adapter errors.
 
 ### Timeouts and budget
 

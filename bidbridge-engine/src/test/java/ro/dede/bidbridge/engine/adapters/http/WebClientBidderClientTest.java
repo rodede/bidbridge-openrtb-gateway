@@ -45,6 +45,20 @@ class WebClientBidderClientTest {
         }
     }
 
+    @Test
+    void throwsBadBidderResponseWhenStatusIsError() {
+        var server = startServer(500, "text/plain", "boom");
+        try {
+            var client = new WebClientBidderClient(WebClient.builder(), validator());
+            var endpoint = "http://127.0.0.1:" + server.port() + "/openrtb2/bid";
+
+            assertThrows(BadBidderResponseException.class,
+                    () -> client.postJson(endpoint, Map.of("id", "req-1")).block());
+        } finally {
+            server.disposeNow();
+        }
+    }
+
     private DisposableServer startServer(int status, String contentType, String body) {
         return HttpServer.create()
                 .host("127.0.0.1")

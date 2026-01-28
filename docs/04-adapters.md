@@ -36,7 +36,7 @@ HTTP stack can be swapped later without changing adapter logic.
 ## Error Handling
 
 - Timeouts → no-bid
-- Invalid response → discard
+- Invalid response → error (bad bidder response)
 - Network errors → fallback
 
 ---
