@@ -7,16 +7,12 @@ import ro.dede.bidbridge.engine.adapters.AdapterContext;
 import ro.dede.bidbridge.engine.adapters.AdapterRegistry;
 import ro.dede.bidbridge.engine.adapters.AdapterRegistry.AdapterEntry;
 import ro.dede.bidbridge.engine.domain.adapter.AdapterResult;
-import ro.dede.bidbridge.engine.domain.adapter.AdapterResultStatus;
 import ro.dede.bidbridge.engine.domain.normalized.NormalizedBidRequest;
-import ro.dede.bidbridge.engine.domain.openrtb.Bid;
 import ro.dede.bidbridge.engine.domain.openrtb.BidResponse;
-import ro.dede.bidbridge.engine.domain.openrtb.SeatBid;
+import ro.dede.bidbridge.engine.merger.ResponseMerger;
 import ro.dede.bidbridge.engine.rules.RulesEvaluator;
 
 import java.time.Duration;
-import java.util.Comparator;
-import java.util.List;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -27,10 +23,12 @@ public class DefaultBidService implements BidService {
     private static final int MERGE_RESERVE_MS = 10;
     private final AdapterRegistry adapterRegistry;
     private final RulesEvaluator rulesEvaluator;
+    private final ResponseMerger responseMerger;
 
-    public DefaultBidService(AdapterRegistry adapterRegistry, RulesEvaluator rulesEvaluator) {
+    public DefaultBidService(AdapterRegistry adapterRegistry, RulesEvaluator rulesEvaluator, ResponseMerger responseMerger) {
         this.adapterRegistry = adapterRegistry;
         this.rulesEvaluator = rulesEvaluator;
+        this.responseMerger = responseMerger;
     }
 
     /**
@@ -50,7 +48,7 @@ public class DefaultBidService implements BidService {
         return Flux.fromIterable(rulesResult.adapters())
                 .flatMap(entry -> executeAdapter(entry, rulesResult.request(), adapterBudgetMs))
                 .collectList()
-                .flatMap(results -> mergeResults(rulesResult.request(), results));
+                .flatMap(results -> responseMerger.merge(rulesResult.request(), results));
     }
 
     /**
@@ -71,39 +69,6 @@ public class DefaultBidService implements BidService {
                 .onErrorResume(TimeoutException.class, ex -> Mono.just(AdapterResult.timeout(entry.name())))
                 .onErrorResume(ex -> Mono.just(AdapterResult.error(entry.name(), "adapter_error", ex.getMessage())))
                 .map(result -> result.withLatencyMs(toMillis(start)));
-    }
-
-    /**
-     * Selects the highest-priced bid; returns no-bid if no adapter bids.
-     */
-    private Mono<BidResponse> mergeResults(NormalizedBidRequest request, List<AdapterResult> results) {
-        var anySuccess = results.stream().anyMatch(result ->
-                result.status() == AdapterResultStatus.BID ||
-                        result.status() == AdapterResultStatus.NO_BID);
-        if (!anySuccess) {
-            var anyTimeout = results.stream().anyMatch(result -> result.status() == AdapterResultStatus.TIMEOUT);
-            if (anyTimeout) {
-                return Mono.error(new OverloadException("All adapters timed out"));
-            }
-            return Mono.error(new AdapterFailureException("All adapters failed"));
-        }
-
-        var best = results.stream()
-                .filter(result -> result.status() == AdapterResultStatus.BID && result.bid() != null)
-                .max(Comparator.comparingDouble(result -> result.bid().price()));
-
-        if (best.isEmpty()) {
-            return Mono.empty();
-        }
-
-        var bid = best.get().bid();
-        var responseBid = new Bid(bid.id(), bid.impid(), bid.price(), bid.adm());
-        var response = new BidResponse(
-                request.requestId(),
-                List.of(new SeatBid(List.of(responseBid))),
-                bid.currency()
-        );
-        return Mono.just(response);
     }
 
     /**

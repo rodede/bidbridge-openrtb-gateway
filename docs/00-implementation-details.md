@@ -108,3 +108,14 @@ rules:
   minBidfloor: 0.5
   allowAdapters: [simulator]
 ```
+
+---
+
+## Response Merger (MVP)
+
+- Select the highest-priced valid bid.
+- Ignore non-positive prices.
+- If no bid remains, return 204.
+- If all adapters time out, return 503 (overload).
+- If all adapters error, return 503 (adapter failure).
+
