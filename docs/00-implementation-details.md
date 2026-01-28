@@ -68,6 +68,12 @@ Configured under `adapters.<adapterName>`:
 - `fixedPrice` (double, optional)
 - `admTemplate` (string, optional)
 
+### HTTP adapters
+
+- HTTP-based adapters use the `HttpBidderClient` abstraction (WebClient implementation by default).
+- Non-2xx responses are mapped to adapter errors with HTTP status in debug fields.
+- 204 responses map to no-bid.
+
 ### Timeouts and budget
 
 - Adapter timeout uses `min(adapter.timeoutMs, request.tmaxMs - reserve)`
@@ -118,4 +124,3 @@ rules:
 - If no bid remains, return 204.
 - If all adapters time out, return 503 (overload).
 - If all adapters error, return 503 (adapter failure).
-
