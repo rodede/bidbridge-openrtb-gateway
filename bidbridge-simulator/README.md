@@ -13,7 +13,7 @@ Minimal OpenRTB bidder simulator used for local and integration testing.
 From repo root:
 
 ```bash
-./bidbridge-engine/mvnw -q -pl bidbridge-simulator spring-boot:run
+mvn spring-boot:run
 ```
 
 Default port: `8081`
