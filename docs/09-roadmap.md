@@ -12,6 +12,7 @@
 ## Phase 2 — Core Platform
 
 - Adapter framework
+- HTTP adapter base + first real bidder integration
 - Response merger
 - Metrics
 - Health checks
@@ -29,9 +30,9 @@
 ## Phase 4 — Production Readiness
 
 - Tracing
-- Load testing
-- Security hardening
-- Documentation
+- Load testing (SSP simulator tooling: client + replay + QPS control)
+- Performance + security hardening (limits, rate limiting, validation, Netty tuning)
+- Documentation + CI (README polish, milestone readiness, badges)
 
 ---
 
@@ -66,6 +67,12 @@ collect adapter bids, select winner, build OpenRTB response
 routing and simple business rules (floors/filters), config loading
 #### Observability: 
 metrics/tracing/logging integration per docs
+#### Adapter HTTP integration:
+base HTTP adapter + stub bidder + request/response mapping hooks
+#### Response policy:
+currency handling + bid validation + defaults
+#### Budgeting/timeout strategy:
+tmax split, per-adapter timeout, overall deadline
 ####  SSP simulator tooling: 
 client + replay + QPS control for integration/load testing
 #### Performance + security hardening:
