@@ -12,6 +12,7 @@ import ro.dede.bidbridge.engine.domain.normalized.NormalizedBidRequest;
 import ro.dede.bidbridge.engine.domain.openrtb.Bid;
 import ro.dede.bidbridge.engine.domain.openrtb.BidResponse;
 import ro.dede.bidbridge.engine.domain.openrtb.SeatBid;
+import ro.dede.bidbridge.engine.rules.RulesEvaluator;
 
 import java.time.Duration;
 import java.util.Comparator;
@@ -25,9 +26,11 @@ import java.util.concurrent.TimeoutException;
 public class DefaultBidService implements BidService {
     private static final int MERGE_RESERVE_MS = 10;
     private final AdapterRegistry adapterRegistry;
+    private final RulesEvaluator rulesEvaluator;
 
-    public DefaultBidService(AdapterRegistry adapterRegistry) {
+    public DefaultBidService(AdapterRegistry adapterRegistry, RulesEvaluator rulesEvaluator) {
         this.adapterRegistry = adapterRegistry;
+        this.rulesEvaluator = rulesEvaluator;
     }
 
     /**
@@ -42,10 +45,12 @@ public class DefaultBidService implements BidService {
 
         // Keep some budget for merge/response building.
         var adapterBudgetMs = Math.max(0, request.tmaxMs() - MERGE_RESERVE_MS);
-        return Flux.fromIterable(adapters)
-                .flatMap(entry -> executeAdapter(entry, request, adapterBudgetMs))
+        var rulesResult = rulesEvaluator.apply(request, adapters);
+
+        return Flux.fromIterable(rulesResult.adapters())
+                .flatMap(entry -> executeAdapter(entry, rulesResult.request(), adapterBudgetMs))
                 .collectList()
-                .flatMap(results -> mergeResults(request, results));
+                .flatMap(results -> mergeResults(rulesResult.request(), results));
     }
 
     /**

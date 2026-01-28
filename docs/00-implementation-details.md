@@ -10,6 +10,7 @@ Refer to `docs/02-architecture.md` for component-level context.
 - Parsing errors → 400
 - Validation errors → 400
 - Internal timeout → 204 or 503
+- Rules-filtered request → 204
 - Error responses return a JSON body: `{ "error": "<message>" }`
 
 ---
@@ -79,3 +80,31 @@ Configured under `adapters.<adapterName>`:
 
 - Store: status, latency, bidder name, selected bid, lightweight debug fields
 - Do not store raw responses (log only)
+
+---
+
+## Rules Engine (MVP)
+
+Configured under `rules`:
+
+- `allowInventory`: list of allowed inventory types (SITE/APP)
+- `denyInventory`: list of disallowed inventory types
+- `minBidfloor`: drop imps below this bidfloor
+- `allowAdapters`: allowlist of adapter names
+- `denyAdapters`: denylist of adapter names
+
+Behavior:
+
+- If no rules are set, allow all.
+- Inventory rules can filter all adapters → no-bid.
+- Bidfloor rule can filter all imps → no-bid.
+- Applied rules and final adapter set are logged.
+
+Example:
+
+```
+rules:
+  allowInventory: [SITE]
+  minBidfloor: 0.5
+  allowAdapters: [simulator]
+```
