@@ -7,6 +7,8 @@ import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Operators;
 import reactor.util.context.Context;
 
+import jakarta.annotation.PreDestroy;
+
 /**
  * Propagates correlation ID from Reactor context into MDC for consistent log prefixing.
  */
@@ -17,6 +19,11 @@ public final class ReactorMdcConfiguration {
 
     public ReactorMdcConfiguration() {
         Hooks.onEachOperator(HOOK_KEY, Operators.lift((sc, subscriber) -> new MdcSubscriber(subscriber)));
+    }
+
+    @PreDestroy
+    void cleanup() {
+        Hooks.resetOnEachOperator(HOOK_KEY);
     }
 
     static final class MdcSubscriber<T> implements CoreSubscriber<T> {
