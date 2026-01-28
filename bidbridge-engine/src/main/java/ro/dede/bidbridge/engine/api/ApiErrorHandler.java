@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.server.ServerWebInputException;
 import ro.dede.bidbridge.engine.normalization.InvalidRequestException;
+import ro.dede.bidbridge.engine.observability.MetricsCollector;
 import ro.dede.bidbridge.engine.service.AdapterFailureException;
 import ro.dede.bidbridge.engine.service.ConfigurationException;
 import ro.dede.bidbridge.engine.service.FilteredRequestException;
@@ -18,6 +19,12 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class ApiErrorHandler {
 
+    private final MetricsCollector metrics;
+
+    public ApiErrorHandler(MetricsCollector metrics) {
+        this.metrics = metrics;
+    }
+
     @ExceptionHandler(WebExchangeBindException.class)
     public ResponseEntity<ErrorResponse> handleValidation(WebExchangeBindException ex) {
         var message = ex.getFieldErrors().stream()
@@ -26,6 +33,7 @@ public class ApiErrorHandler {
         if (message.isBlank()) {
             message = "Validation failed";
         }
+        metrics.recordError("validation");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                 .body(new ErrorResponse(message));
@@ -36,6 +44,7 @@ public class ApiErrorHandler {
         var message = ex.getReason() == null || ex.getReason().isBlank()
                 ? "Invalid request"
                 : ex.getReason();
+        metrics.recordError("input");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                 .body(new ErrorResponse(message));
@@ -46,6 +55,7 @@ public class ApiErrorHandler {
         var message = ex.getMessage() == null || ex.getMessage().isBlank()
                 ? "Invalid request"
                 : ex.getMessage();
+        metrics.recordError("invalid");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                 .body(new ErrorResponse(message));
@@ -56,6 +66,7 @@ public class ApiErrorHandler {
         var message = ex.getMessage() == null || ex.getMessage().isBlank()
                 ? "Overloaded"
                 : ex.getMessage();
+        metrics.recordError("overload");
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                 .body(new ErrorResponse(message));
@@ -66,6 +77,7 @@ public class ApiErrorHandler {
         var message = ex.getMessage() == null || ex.getMessage().isBlank()
                 ? "Adapter failure"
                 : ex.getMessage();
+        metrics.recordError("adapter_failure");
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                 .body(new ErrorResponse(message));
@@ -73,6 +85,7 @@ public class ApiErrorHandler {
 
     @ExceptionHandler(FilteredRequestException.class)
     public ResponseEntity<Void> handleFilteredRequest(FilteredRequestException ex) {
+        metrics.recordNoBid();
         return ResponseEntity.noContent()
                 .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                 .build();
@@ -83,6 +96,7 @@ public class ApiErrorHandler {
         var message = ex.getMessage() == null || ex.getMessage().isBlank()
                 ? "Configuration error"
                 : ex.getMessage();
+        metrics.recordError("configuration");
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                 .body(new ErrorResponse(message));
@@ -90,8 +104,9 @@ public class ApiErrorHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex) {
+        metrics.recordError("unexpected");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
-                .body(new ErrorResponse("Internal error: " + ex.getMessage()));
+                .body(new ErrorResponse("Internal error"));
     }
 }

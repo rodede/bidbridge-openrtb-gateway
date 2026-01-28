@@ -10,6 +10,7 @@ import ro.dede.bidbridge.engine.domain.adapter.AdapterResult;
 import ro.dede.bidbridge.engine.domain.normalized.NormalizedBidRequest;
 import ro.dede.bidbridge.engine.domain.openrtb.BidResponse;
 import ro.dede.bidbridge.engine.merger.ResponseMerger;
+import ro.dede.bidbridge.engine.observability.MetricsCollector;
 import ro.dede.bidbridge.engine.rules.RulesEvaluator;
 
 import java.time.Duration;
@@ -24,11 +25,13 @@ public class DefaultBidService implements BidService {
     private final AdapterRegistry adapterRegistry;
     private final RulesEvaluator rulesEvaluator;
     private final ResponseMerger responseMerger;
+    private final MetricsCollector metrics;
 
-    public DefaultBidService(AdapterRegistry adapterRegistry, RulesEvaluator rulesEvaluator, ResponseMerger responseMerger) {
+    public DefaultBidService(AdapterRegistry adapterRegistry, RulesEvaluator rulesEvaluator, ResponseMerger responseMerger, MetricsCollector metrics) {
         this.adapterRegistry = adapterRegistry;
         this.rulesEvaluator = rulesEvaluator;
         this.responseMerger = responseMerger;
+        this.metrics = metrics;
     }
 
     /**
@@ -48,13 +51,17 @@ public class DefaultBidService implements BidService {
         return Flux.fromIterable(rulesResult.adapters())
                 .flatMap(entry -> executeAdapter(entry, rulesResult.request(), adapterBudgetMs))
                 .collectList()
-                .flatMap(results -> responseMerger.merge(rulesResult.request(), results));
+                .flatMap(results -> responseMerger.merge(rulesResult.request(), results)
+                        .doOnNext(response -> metrics.recordBid())
+                        .switchIfEmpty(Mono.fromRunnable(metrics::recordNoBid)));
     }
 
     /**
      * Executes a single adapter with per-adapter timeout and error mapping.
      */
-    private Mono<AdapterResult> executeAdapter(AdapterEntry entry, NormalizedBidRequest request, int budgetMs) {
+    private Mono<AdapterResult> executeAdapter(AdapterEntry entry,
+                                               NormalizedBidRequest request,
+                                               int budgetMs) {
         var configTimeout = entry.config().getTimeoutMs();
         var timeoutMs = configTimeout == null ? budgetMs : Math.min(configTimeout, budgetMs);
         if (timeoutMs <= 0) {
@@ -66,7 +73,10 @@ public class DefaultBidService implements BidService {
         return entry.adapter()
                 .bid(request, context)
                 .timeout(Duration.ofMillis(timeoutMs))
-                .onErrorResume(TimeoutException.class, ex -> Mono.just(AdapterResult.timeout(entry.name())))
+                .onErrorResume(TimeoutException.class, ex -> {
+                    metrics.recordAdapterTimeout(entry.name());
+                    return Mono.just(AdapterResult.timeout(entry.name()));
+                })
                 .onErrorResume(ex -> Mono.just(AdapterResult.error(entry.name(), "adapter_error", ex.getMessage())))
                 .map(result -> result.withLatencyMs(toMillis(start)));
     }

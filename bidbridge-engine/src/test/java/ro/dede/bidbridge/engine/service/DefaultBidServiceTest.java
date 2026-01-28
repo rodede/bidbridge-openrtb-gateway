@@ -11,6 +11,7 @@ import ro.dede.bidbridge.engine.domain.normalized.*;
 import ro.dede.bidbridge.engine.rules.DefaultRulesEvaluator;
 import ro.dede.bidbridge.engine.rules.RulesProperties;
 import ro.dede.bidbridge.engine.merger.DefaultResponseMerger;
+import ro.dede.bidbridge.engine.observability.MetricsCollector;
 
 import java.util.List;
 import java.util.Map;
@@ -32,7 +33,7 @@ class DefaultBidServiceTest {
                 new SelectedBid("bid-b", "1", 2.0, "<b/>", "USD"), null));
 
         var registry = new AdapterRegistry(Map.of("a", adapterA, "b", adapterB), properties);
-        var service = new DefaultBidService(registry, rulesEvaluator(), new DefaultResponseMerger());
+        var service = new DefaultBidService(registry, rulesEvaluator(), new DefaultResponseMerger(), metricsCollector());
 
         var response = service.bid(sampleRequest()).block();
 
@@ -51,7 +52,7 @@ class DefaultBidServiceTest {
         BidderAdapter adapterB = (request, context) -> Mono.error(new TimeoutException("timeout"));
 
         var registry = new AdapterRegistry(Map.of("a", adapterA, "b", adapterB), properties);
-        var service = new DefaultBidService(registry, rulesEvaluator(), new DefaultResponseMerger());
+        var service = new DefaultBidService(registry, rulesEvaluator(), new DefaultResponseMerger(), metricsCollector());
 
         var result = service.bid(sampleRequest()).blockOptional();
 
@@ -68,7 +69,7 @@ class DefaultBidServiceTest {
         BidderAdapter adapterB = (request, context) -> Mono.error(new TimeoutException("timeout"));
 
         var registry = new AdapterRegistry(Map.of("a", adapterA, "b", adapterB), properties);
-        var service = new DefaultBidService(registry, rulesEvaluator(), new DefaultResponseMerger());
+        var service = new DefaultBidService(registry, rulesEvaluator(), new DefaultResponseMerger(), metricsCollector());
 
         assertThrows(OverloadException.class, () -> service.bid(sampleRequest()).block());
     }
@@ -83,7 +84,7 @@ class DefaultBidServiceTest {
         BidderAdapter adapterB = (request, context) -> Mono.error(new RuntimeException("boom"));
 
         var registry = new AdapterRegistry(Map.of("a", adapterA, "b", adapterB), properties);
-        var service = new DefaultBidService(registry, rulesEvaluator(), new DefaultResponseMerger());
+        var service = new DefaultBidService(registry, rulesEvaluator(), new DefaultResponseMerger(), metricsCollector());
 
         assertThrows(AdapterFailureException.class, () -> service.bid(sampleRequest()).block());
     }
@@ -92,7 +93,7 @@ class DefaultBidServiceTest {
     void throwsConfigurationWhenNoAdaptersEnabled() {
         var properties = new AdapterProperties();
         var registry = new AdapterRegistry(Map.of(), properties);
-        var service = new DefaultBidService(registry, rulesEvaluator(), new DefaultResponseMerger());
+        var service = new DefaultBidService(registry, rulesEvaluator(), new DefaultResponseMerger(), metricsCollector());
 
         assertThrows(ConfigurationException.class, () -> service.bid(sampleRequest()).block());
     }
@@ -108,7 +109,7 @@ class DefaultBidServiceTest {
         var registry = new AdapterRegistry(Map.of("a", adapterA), properties);
         var rules = new RulesProperties();
         rules.setDenyAdapters(List.of("a"));
-        var service = new DefaultBidService(registry, new DefaultRulesEvaluator(rules), new DefaultResponseMerger());
+        var service = new DefaultBidService(registry, new DefaultRulesEvaluator(rules), new DefaultResponseMerger(), metricsCollector());
 
         assertThrows(FilteredRequestException.class, () -> service.bid(sampleRequest()).block());
     }
@@ -124,7 +125,7 @@ class DefaultBidServiceTest {
         var registry = new AdapterRegistry(Map.of("a", adapterA), properties);
         var rules = new RulesProperties();
         rules.setMinBidfloor(10.0);
-        var service = new DefaultBidService(registry, new DefaultRulesEvaluator(rules), new DefaultResponseMerger());
+        var service = new DefaultBidService(registry, new DefaultRulesEvaluator(rules), new DefaultResponseMerger(), metricsCollector());
 
         assertThrows(FilteredRequestException.class, () -> service.bid(sampleRequest()).block());
     }
@@ -153,5 +154,9 @@ class DefaultBidServiceTest {
 
     private DefaultRulesEvaluator rulesEvaluator() {
         return new DefaultRulesEvaluator(new RulesProperties());
+    }
+
+    private MetricsCollector metricsCollector() {
+        return new MetricsCollector(new io.micrometer.core.instrument.simple.SimpleMeterRegistry());
     }
 }

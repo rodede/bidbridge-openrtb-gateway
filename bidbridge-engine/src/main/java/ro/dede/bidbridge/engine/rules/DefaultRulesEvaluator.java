@@ -33,7 +33,7 @@ public class DefaultRulesEvaluator implements RulesEvaluator {
 
             if (!applied.isEmpty()) {
                 var adapterNames = filteredAdapters.stream().map(AdapterEntry::name).toList();
-                log.info("Rules applied for requestId={} rules={} adapters={}",
+                log.info("Rules applied requestId={} rules={} adapters={}",
                         request.requestId(), applied, adapterNames);
             }
             if (filteredRequest.imps().isEmpty()) {
@@ -46,7 +46,7 @@ public class DefaultRulesEvaluator implements RulesEvaluator {
             return new RulesResult(filteredRequest, filteredAdapters, applied);
         } catch (FilteredRequestException ex) {
             if (!applied.isEmpty()) {
-                log.info("Rules applied for requestId={} rules={} adapters=[]",
+                log.info("Rules applied requestId={} rules={} adapters=[]",
                         request.requestId(), applied);
             }
             throw ex;
