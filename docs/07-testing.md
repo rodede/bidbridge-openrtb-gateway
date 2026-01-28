@@ -14,6 +14,7 @@
 - SSP simulator
 - Adapter mocks
 - End-to-end flow
+- Integration-style tests live under `ro.dede.bidbridge.engine.it` and use the `*IT` naming convention
 
 ---
 
