@@ -26,3 +26,8 @@ adapters:
     bidProbability: 1.0
     fixedPrice: 1.5
     admTemplate: "<vast/>"
+
+rules:
+  allowInventory: [SITE]
+  minBidfloor: 0.5
+  allowAdapters: [simulator]

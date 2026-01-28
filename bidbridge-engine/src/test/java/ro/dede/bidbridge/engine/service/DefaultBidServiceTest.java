@@ -8,6 +8,8 @@ import ro.dede.bidbridge.engine.adapters.BidderAdapter;
 import ro.dede.bidbridge.engine.domain.adapter.AdapterResult;
 import ro.dede.bidbridge.engine.domain.adapter.SelectedBid;
 import ro.dede.bidbridge.engine.domain.normalized.*;
+import ro.dede.bidbridge.engine.rules.DefaultRulesEvaluator;
+import ro.dede.bidbridge.engine.rules.RulesProperties;
 
 import java.util.List;
 import java.util.Map;
@@ -29,7 +31,7 @@ class DefaultBidServiceTest {
                 new SelectedBid("bid-b", "1", 2.0, "<b/>", "USD"), null));
 
         var registry = new AdapterRegistry(Map.of("a", adapterA, "b", adapterB), properties);
-        var service = new DefaultBidService(registry);
+        var service = new DefaultBidService(registry, rulesEvaluator());
 
         var response = service.bid(sampleRequest()).block();
 
@@ -48,7 +50,7 @@ class DefaultBidServiceTest {
         BidderAdapter adapterB = (request, context) -> Mono.error(new TimeoutException("timeout"));
 
         var registry = new AdapterRegistry(Map.of("a", adapterA, "b", adapterB), properties);
-        var service = new DefaultBidService(registry);
+        var service = new DefaultBidService(registry, rulesEvaluator());
 
         var result = service.bid(sampleRequest()).blockOptional();
 
@@ -65,7 +67,7 @@ class DefaultBidServiceTest {
         BidderAdapter adapterB = (request, context) -> Mono.error(new TimeoutException("timeout"));
 
         var registry = new AdapterRegistry(Map.of("a", adapterA, "b", adapterB), properties);
-        var service = new DefaultBidService(registry);
+        var service = new DefaultBidService(registry, rulesEvaluator());
 
         assertThrows(OverloadException.class, () -> service.bid(sampleRequest()).block());
     }
@@ -80,7 +82,7 @@ class DefaultBidServiceTest {
         BidderAdapter adapterB = (request, context) -> Mono.error(new RuntimeException("boom"));
 
         var registry = new AdapterRegistry(Map.of("a", adapterA, "b", adapterB), properties);
-        var service = new DefaultBidService(registry);
+        var service = new DefaultBidService(registry, rulesEvaluator());
 
         assertThrows(AdapterFailureException.class, () -> service.bid(sampleRequest()).block());
     }
@@ -89,9 +91,41 @@ class DefaultBidServiceTest {
     void throwsConfigurationWhenNoAdaptersEnabled() {
         var properties = new AdapterProperties();
         var registry = new AdapterRegistry(Map.of(), properties);
-        var service = new DefaultBidService(registry);
+        var service = new DefaultBidService(registry, rulesEvaluator());
 
         assertThrows(ConfigurationException.class, () -> service.bid(sampleRequest()).block());
+    }
+
+    @Test
+    void returnsNoBidWhenRulesFilterAllAdapters() {
+        var properties = new AdapterProperties();
+        properties.getConfigs().put("a", enabledConfig());
+
+        BidderAdapter adapterA = (request, context) -> Mono.just(AdapterResult.bid("a",
+                new SelectedBid("bid-a", "1", 1.0, "<a/>", "USD"), null));
+
+        var registry = new AdapterRegistry(Map.of("a", adapterA), properties);
+        var rules = new RulesProperties();
+        rules.setDenyAdapters(List.of("a"));
+        var service = new DefaultBidService(registry, new DefaultRulesEvaluator(rules));
+
+        assertThrows(FilteredRequestException.class, () -> service.bid(sampleRequest()).block());
+    }
+
+    @Test
+    void returnsNoBidWhenRulesFilterAllImps() {
+        var properties = new AdapterProperties();
+        properties.getConfigs().put("a", enabledConfig());
+
+        BidderAdapter adapterA = (request, context) -> Mono.just(AdapterResult.bid("a",
+                new SelectedBid("bid-a", "1", 1.0, "<a/>", "USD"), null));
+
+        var registry = new AdapterRegistry(Map.of("a", adapterA), properties);
+        var rules = new RulesProperties();
+        rules.setMinBidfloor(10.0);
+        var service = new DefaultBidService(registry, new DefaultRulesEvaluator(rules));
+
+        assertThrows(FilteredRequestException.class, () -> service.bid(sampleRequest()).block());
     }
 
     private AdapterProperties.AdapterConfig enabledConfig() {
@@ -114,5 +148,9 @@ class DefaultBidServiceTest {
                 null,
                 null
         );
+    }
+
+    private DefaultRulesEvaluator rulesEvaluator() {
+        return new DefaultRulesEvaluator(new RulesProperties());
     }
 }

@@ -9,6 +9,7 @@ import org.springframework.web.server.ServerWebInputException;
 import ro.dede.bidbridge.engine.normalization.InvalidRequestException;
 import ro.dede.bidbridge.engine.service.AdapterFailureException;
 import ro.dede.bidbridge.engine.service.ConfigurationException;
+import ro.dede.bidbridge.engine.service.FilteredRequestException;
 import ro.dede.bidbridge.engine.service.OverloadException;
 
 import java.util.stream.Collectors;
@@ -68,6 +69,13 @@ public class ApiErrorHandler {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                 .body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(FilteredRequestException.class)
+    public ResponseEntity<Void> handleFilteredRequest(FilteredRequestException ex) {
+        return ResponseEntity.noContent()
+                .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
+                .build();
     }
 
     @ExceptionHandler(ConfigurationException.class)
