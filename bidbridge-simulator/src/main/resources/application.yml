@@ -7,7 +7,7 @@ server:
 simulator:
   enabled: true
   bidProbability: 1.0
-  fixedPrice: 1.5
-  currency: "USD"
+  fixedPrice: 100
+  currency: "RON"
   admTemplate: "<vast/>"
   responseDelayMs: 0

@@ -73,12 +73,19 @@ public class DefaultBidService implements BidService {
         return entry.adapter()
                 .bid(request, context)
                 .timeout(Duration.ofMillis(timeoutMs))
-                .onErrorResume(TimeoutException.class, ex -> {
+                .onErrorResume(BadBidderResponseException.class, ex -> {
+                    metrics.recordAdapterError(entry.name());
+                    return Mono.just(AdapterResult.error(entry.name(), "bad_bidder_response", ex.getMessage()));
+                }).
+                onErrorResume(TimeoutException.class, ex -> {
                     metrics.recordAdapterTimeout(entry.name());
                     return Mono.just(AdapterResult.timeout(entry.name()));
-                })
-                .onErrorResume(ex -> Mono.just(AdapterResult.error(entry.name(), "adapter_error", ex.getMessage())))
-                .map(result -> result.withLatencyMs(toMillis(start)));
+                }).
+                onErrorResume(ex -> {
+                    metrics.recordAdapterError(entry.name());
+                    return Mono.just(AdapterResult.error(entry.name(), "adapter_error", ex.getMessage()));
+                }).
+                map(result -> result.withLatencyMs(toMillis(start)));
     }
 
     /**

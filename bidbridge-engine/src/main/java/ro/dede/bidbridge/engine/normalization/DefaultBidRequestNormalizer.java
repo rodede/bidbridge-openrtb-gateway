@@ -17,7 +17,7 @@ public class DefaultBidRequestNormalizer implements BidRequestNormalizer {
     private static final Logger log = LoggerFactory.getLogger(DefaultBidRequestNormalizer.class);
     private static final int TMAX_DEFAULT_MS = 100;
     private static final int TMAX_MIN_MS = 10;
-    private static final int TMAX_MAX_MS = 1000;
+    private static final int TMAX_MAX_MS = 60000;
 
     @Override
     public Mono<NormalizedBidRequest> normalize(BidRequest request) {

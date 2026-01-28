@@ -22,18 +22,19 @@ logging:
     console: "%X{correlationId:-system} - %d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level %logger{36} - %msg%n"
 
 adapters:
-  simulator:
-    enabled: true
-    timeoutMs: 80
-    bidProbability: 1.0
-    fixedPrice: 1.5
-    admTemplate: "<vast/>"
-  simulatorHttp:
-    enabled: true
-    endpoint: "http://localhost:8081/openrtb2/bid"
-    timeoutMs: 80
+  configs:
+    simulator:
+      enabled: true
+      timeoutMs: 80
+      bidProbability: 1.0
+      fixedPrice: 0.5
+      admTemplate: "<vast/>"
+    simulatorHttp:
+      enabled: true
+      endpoint: "http://localhost:8081/openrtb2/bid"
+      timeoutMs: 60000
 
 rules:
   allowInventory: [ SITE ]
   minBidfloor: 0.5
-  allowAdapters: [ simulator ]
+  allowAdapters: [ simulator, simulatorHttp ]
