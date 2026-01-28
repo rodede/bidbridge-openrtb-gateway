@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: BidBridge Simulator
+server:
+  port: 8081
+
+simulator:
+  enabled: true
+  bidProbability: 1.0
+  fixedPrice: 1.5
+  currency: "USD"
+  admTemplate: "<vast/>"
+  responseDelayMs: 0
