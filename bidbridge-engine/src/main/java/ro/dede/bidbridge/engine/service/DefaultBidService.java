@@ -1,5 +1,9 @@
 package ro.dede.bidbridge.engine.service;
 
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -22,16 +26,23 @@ import java.util.concurrent.TimeoutException;
 @Service
 public class DefaultBidService implements BidService {
     private static final int MERGE_RESERVE_MS = 10;
+    private static final Logger log = LoggerFactory.getLogger(DefaultBidService.class);
     private final AdapterRegistry adapterRegistry;
     private final RulesEvaluator rulesEvaluator;
     private final ResponseMerger responseMerger;
     private final MetricsCollector metrics;
+    private final ObservationRegistry observationRegistry;
 
-    public DefaultBidService(AdapterRegistry adapterRegistry, RulesEvaluator rulesEvaluator, ResponseMerger responseMerger, MetricsCollector metrics) {
+    public DefaultBidService(AdapterRegistry adapterRegistry,
+                             RulesEvaluator rulesEvaluator,
+                             ResponseMerger responseMerger,
+                             MetricsCollector metrics,
+                             ObservationRegistry observationRegistry) {
         this.adapterRegistry = adapterRegistry;
         this.rulesEvaluator = rulesEvaluator;
         this.responseMerger = responseMerger;
         this.metrics = metrics;
+        this.observationRegistry = observationRegistry;
     }
 
     /**
@@ -70,22 +81,31 @@ public class DefaultBidService implements BidService {
         // Measure adapter latency and map timeouts/errors into adapter-level results.
         var context = new AdapterContext(entry.name(), entry.config());
         var start = System.nanoTime();
-        return entry.adapter()
-                .bid(request, context)
-                .timeout(Duration.ofMillis(timeoutMs))
-                .onErrorResume(BadBidderResponseException.class, ex -> {
-                    metrics.recordAdapterBadResponse(entry.name());
-                    return Mono.just(AdapterResult.error(entry.name(), "bad_bidder_response", messageOrDefault(ex, "Bad bidder response")));
-                })
-                .onErrorResume(TimeoutException.class, ex -> {
-                    metrics.recordAdapterTimeout(entry.name());
-                    return Mono.just(AdapterResult.timeout(entry.name()));
-                })
-                .onErrorResume(ex -> {
-                    metrics.recordAdapterError(entry.name());
-                    return Mono.just(AdapterResult.error(entry.name(), "adapter_error", messageOrDefault(ex, "Adapter error")));
-                })
-                .map(result -> result.withLatencyMs(toMillis(start)));
+        return Mono.defer(() -> {
+                    var observation = Observation.createNotStarted("adapter.call", observationRegistry)
+                            .lowCardinalityKeyValue("adapter", entry.name());
+                    return entry.adapter()
+                            .bid(request, context)
+                            .doOnSubscribe(s -> observation.start())
+                            .timeout(Duration.ofMillis(timeoutMs))
+                            .onErrorResume(BadBidderResponseException.class, ex -> {
+                                metrics.recordAdapterBadResponse(entry.name());
+                                return Mono.just(AdapterResult.error(entry.name(), "bad_bidder_response",
+                                        messageOrDefault(ex, "Bad bidder response")));
+                            })
+                            .onErrorResume(TimeoutException.class, ex -> {
+                                metrics.recordAdapterTimeout(entry.name());
+                                return Mono.just(AdapterResult.timeout(entry.name()));
+                            })
+                            .onErrorResume(ex -> {
+                                metrics.recordAdapterError(entry.name());
+                                return Mono.just(AdapterResult.error(entry.name(), "adapter_error",
+                                        messageOrDefault(ex, "Adapter error")));
+                            })
+                            .map(result -> result.withLatencyMs(toMillis(start)))
+                            .doOnNext(result -> logAdapterResult(request.requestId(), entry.name(), result))
+                            .doFinally(signalType -> observation.stop());
+                });
     }
 
     /**
@@ -98,5 +118,16 @@ public class DefaultBidService implements BidService {
     private String messageOrDefault(Throwable ex, String fallback) {
         var message = ex.getMessage();
         return message == null || message.isBlank() ? fallback : message;
+    }
+
+    private void logAdapterResult(String requestId, String adapter, AdapterResult result) {
+        var debug = result.debug();
+        log.info("adapter completed requestId={} adapter={} status={} latencyMs={} errorCode={} errorMessage={}",
+                requestId,
+                adapter,
+                result.status(),
+                result.latencyMs(),
+                debug == null ? null : debug.errorCode(),
+                debug == null ? null : debug.errorMessage());
     }
 }

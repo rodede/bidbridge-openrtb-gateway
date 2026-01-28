@@ -69,6 +69,12 @@ routing and simple business rules (floors/filters), config loading
 metrics/tracing/logging integration per docs
 #### Adapter HTTP integration:
 base HTTP adapter + stub bidder + request/response mapping hooks
+
+  2. Response policy (currency handling + bid validation + defaults)
+      - Some of this is in DefaultResponseMerger, but not fully aligned with docs (e.g., consistent currency policy, debug capture).
+  3. Budgeting/timeout strategy (tmax split, per‑adapter timeout, overall deadline)
+      - You do per‑adapter timeout; you don’t enforce overall deadline at the service layer.
+
 #### Response policy:
 currency handling + bid validation + defaults
 #### Budgeting/timeout strategy:
@@ -80,3 +86,4 @@ limits, rate limiting, validation, Netty tuning
 ####  Docs/README polish + milestone readiness; CI setup + badges
 
 ---
+

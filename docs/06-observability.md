@@ -10,6 +10,7 @@
 - errors_total
 - adapter_timeouts
 - adapter_bad_response
+- adapter_errors
 - request_latency (timer with p95/p99)
 
 ### Tags
@@ -18,6 +19,7 @@
  - errors_total: type
  - adapter_timeouts: adapter
  - adapter_bad_response: adapter
+ - adapter_errors: adapter
 ---
 
 ## Tracing
