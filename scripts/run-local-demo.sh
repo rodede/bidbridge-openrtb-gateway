@@ -65,4 +65,21 @@ curl -s -X POST "http://localhost:${ENGINE_PORT}/openrtb2/bid" \
   -H "Content-Type: application/json" \
   -d '{"id":"req-1","imp":[{"id":"1","banner":{},"bidfloor":0.5}],"site":{}, "tmax":10000}'
 echo
+
+# Optional: run the load generator (set RUN_LOADGEN=1 to enable).
+if [[ "${RUN_LOADGEN:-0}" == "1" ]]; then
+  LOADGEN_REQUEST_FILE="${ROOT_DIR}/bidbridge-loadgen/src/main/resources/sample-request.json"
+  LOADGEN_REPLAY_FILE="${ROOT_DIR}/bidbridge-loadgen/src/main/resources/sample-requests.jsonl"
+  LOADGEN_MODE="${LOADGEN_MODE:-single}"
+  if [[ "${LOADGEN_MODE}" == "replay" ]]; then
+    mvn -pl bidbridge-loadgen -DskipTests exec:java \
+      -Dexec.mainClass=ro.dede.bidbridge.loadgen.LoadGenMain \
+      -Dexec.args="--url http://localhost:${ENGINE_PORT}/openrtb2/bid --replay-file ${LOADGEN_REPLAY_FILE} --qps ${LOADGEN_QPS:-50} --duration-seconds ${LOADGEN_DURATION:-5} --concurrency ${LOADGEN_CONCURRENCY:-50}"
+  else
+    mvn -pl bidbridge-loadgen -DskipTests exec:java \
+      -Dexec.mainClass=ro.dede.bidbridge.loadgen.LoadGenMain \
+      -Dexec.args="--url http://localhost:${ENGINE_PORT}/openrtb2/bid --request-file ${LOADGEN_REQUEST_FILE} --qps ${LOADGEN_QPS:-50} --duration-seconds ${LOADGEN_DURATION:-5} --concurrency ${LOADGEN_CONCURRENCY:-50}"
+  fi
+fi
+
 echo "Done. Shutting down."

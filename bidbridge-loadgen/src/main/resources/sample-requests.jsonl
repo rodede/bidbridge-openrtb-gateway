@@ -1,0 +1,3 @@
+{"id":"req-1","imp":[{"id":"1","banner":{},"bidfloor":0.5}],"site":{}, "tmax":10000}
+{"id":"req-2","imp":[{"id":"1","video":{},"bidfloor":1.0}],"site":{}, "tmax":120}
+{"id":"req-3","imp":[{"id":"1","audio":{},"bidfloor":0.1}],"site":{}, "tmax":80}

@@ -65,6 +65,8 @@ wget -q -O - --header="Content-Type: application/json" --post-data='{"id":"req-1
 }
 ```
 
+---
+
 ## Notes for AWS
 
 - Expose port 8081
