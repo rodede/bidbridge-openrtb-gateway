@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DefaultResponseMergerTest {
 
-    private final DefaultResponseMerger merger = new DefaultResponseMerger();
+    private final DefaultResponseMerger merger = new DefaultResponseMerger(new ResponsePolicy(new ResponseProperties()));
 
     @Test
     void selectsHighestBid() {

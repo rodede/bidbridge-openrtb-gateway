@@ -120,7 +120,10 @@ rules:
 ## Response Merger (MVP)
 
 - Select the highest-priced valid bid.
-- Ignore non-positive prices.
+- Ignore bids with missing id/impid, non-positive prices, or impid not in request.
+- Apply currency policy:
+  - If currency is missing, use `response.defaultCurrency` (defaults to USD).
+  - If `response.allowedCurrencies` is set, drop bids with other currencies.
 - If no bid remains, return 204.
 - If all adapters time out, return 503 (overload).
 - If all adapters error, return 503 (adapter failure).

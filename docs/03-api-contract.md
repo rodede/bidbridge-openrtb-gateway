@@ -48,6 +48,8 @@ Backward compatibility:
 - impid must match impression id
 - price must be > 0
 - adm contains creative or VAST
+- cur is set to `response.defaultCurrency` if missing (defaults to USD)
+- if `response.allowedCurrencies` is configured, bids outside the list are dropped
 
 ---
 
