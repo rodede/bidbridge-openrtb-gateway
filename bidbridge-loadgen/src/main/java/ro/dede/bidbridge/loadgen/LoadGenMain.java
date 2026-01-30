@@ -2,8 +2,14 @@ package ro.dede.bidbridge.loadgen;
 
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
+import reactor.netty.http.client.HttpClient;
+import reactor.netty.resources.ConnectionProvider;
+import reactor.netty.resources.LoopResources;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,21 +33,31 @@ public final class LoadGenMain {
             System.err.println("Replay file is empty.");
             System.exit(1);
         }
-        var client = WebClient.builder().build();
+        var connectionProvider = ConnectionProvider.create("loadgen", config.concurrency * 2);
+        var loopResources = LoopResources.create("loadgen", Math.min(2, config.concurrency), true);
+        var httpClient = HttpClient.create(connectionProvider).runOn(loopResources);
+        var client = WebClient.builder()
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .build();
         var metrics = new LoadGenMetrics();
         var payloadIndex = new AtomicLong();
+        var timerScheduler = Schedulers.newSingle("loadgen-timer");
 
         var periodNanos = Math.max(1, 1_000_000_000L / config.qps);
         var duration = Duration.ofSeconds(config.durationSeconds);
         var start = System.nanoTime();
 
-        Flux.interval(Duration.ofNanos(periodNanos))
+        Flux.interval(Duration.ofNanos(periodNanos), timerScheduler)
                 .take(duration)
                 .flatMap(ignored -> sendOnce(client, config, payloads, payloadIndex, metrics), config.concurrency)
                 .blockLast();
 
         var elapsedMs = (System.nanoTime() - start) / 1_000_000L;
         metrics.printSummary(elapsedMs);
+        Schedulers.shutdownNow();
+        timerScheduler.dispose();
+        connectionProvider.disposeLater().block();
+        loopResources.disposeLater().block();
     }
 
     private static Mono<Void> sendOnce(WebClient client,
