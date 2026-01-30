@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import ro.dede.bidbridge.engine.domain.adapter.AdapterResult;
 import ro.dede.bidbridge.engine.domain.adapter.AdapterResultStatus;
+import ro.dede.bidbridge.engine.domain.adapter.SelectedBid;
 import ro.dede.bidbridge.engine.domain.openrtb.Bid;
 import ro.dede.bidbridge.engine.domain.openrtb.BidResponse;
 import ro.dede.bidbridge.engine.domain.openrtb.SeatBid;
@@ -13,12 +14,18 @@ import ro.dede.bidbridge.engine.service.OverloadException;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Selects the highest-priced valid bid and builds the OpenRTB response.
  */
 @Component
 public class DefaultResponseMerger implements ResponseMerger {
+    private final ResponsePolicy responsePolicy;
+
+    public DefaultResponseMerger(ResponsePolicy responsePolicy) {
+        this.responsePolicy = responsePolicy;
+    }
 
     @Override
     public Mono<BidResponse> merge(NormalizedBidRequest request, List<AdapterResult> results) {
@@ -33,15 +40,16 @@ public class DefaultResponseMerger implements ResponseMerger {
         }
 
         var best = results.stream()
-                .filter(result -> result.status() == AdapterResultStatus.BID && result.bid() != null)
-                .filter(result -> result.bid().price() > 0)
-                .max(Comparator.comparingDouble(result -> result.bid().price()));
+                .filter(result -> result.status() == AdapterResultStatus.BID)
+                .map(result -> responsePolicy.normalize(request, result.bid()))
+                .flatMap(Optional::stream)
+                .max(Comparator.comparingDouble(SelectedBid::price));
 
         if (best.isEmpty()) {
             return Mono.empty();
         }
 
-        var bid = best.get().bid();
+        var bid = best.get();
         var responseBid = new Bid(bid.id(), bid.impid(), bid.price(), bid.adm());
         var response = new BidResponse(
                 request.requestId(),
