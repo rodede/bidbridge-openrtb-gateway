@@ -26,12 +26,18 @@ public class DefaultBidService implements BidService {
     private final RulesEvaluator rulesEvaluator;
     private final ResponseMerger responseMerger;
     private final MetricsCollector metrics;
+    private final BidServiceProperties properties;
 
-    public DefaultBidService(AdapterRegistry adapterRegistry, RulesEvaluator rulesEvaluator, ResponseMerger responseMerger, MetricsCollector metrics) {
+    public DefaultBidService(AdapterRegistry adapterRegistry,
+                             RulesEvaluator rulesEvaluator,
+                             ResponseMerger responseMerger,
+                             MetricsCollector metrics,
+                             BidServiceProperties properties) {
         this.adapterRegistry = adapterRegistry;
         this.rulesEvaluator = rulesEvaluator;
         this.responseMerger = responseMerger;
         this.metrics = metrics;
+        this.properties = properties;
     }
 
     /**
@@ -44,8 +50,13 @@ public class DefaultBidService implements BidService {
             return Mono.error(new ConfigurationException("No adapters enabled"));
         }
 
+        var requestDeadlineMs = resolveDeadlineMs(request);
+        if (requestDeadlineMs <= 0) {
+            return Mono.error(new OverloadException("Request timed out"));
+        }
+
         // Keep some budget for merge/response building.
-        var adapterBudgetMs = Math.max(0, request.tmaxMs() - MERGE_RESERVE_MS);
+        var adapterBudgetMs = Math.max(0, requestDeadlineMs - MERGE_RESERVE_MS);
         var rulesResult = rulesEvaluator.apply(request, adapters);
 
         return Flux.fromIterable(rulesResult.adapters())
@@ -53,7 +64,9 @@ public class DefaultBidService implements BidService {
                 .collectList()
                 .flatMap(results -> responseMerger.merge(rulesResult.request(), results)
                         .doOnNext(response -> metrics.recordBid())
-                        .switchIfEmpty(Mono.fromRunnable(metrics::recordNoBid)));
+                        .switchIfEmpty(Mono.fromRunnable(metrics::recordNoBid)))
+                .timeout(Duration.ofMillis(requestDeadlineMs))
+                .onErrorMap(TimeoutException.class, ex -> new OverloadException("Request timed out"));
     }
 
     /**
@@ -98,5 +111,14 @@ public class DefaultBidService implements BidService {
     private String messageOrDefault(Throwable ex, String fallback) {
         var message = ex.getMessage();
         return message == null || message.isBlank() ? fallback : message;
+    }
+
+    private int resolveDeadlineMs(NormalizedBidRequest request) {
+        var requestTmax = request.tmaxMs();
+        var configured = properties.getGlobalTimeoutMs();
+        if (configured == null || configured <= 0) {
+            return requestTmax;
+        }
+        return Math.min(requestTmax, configured);
     }
 }

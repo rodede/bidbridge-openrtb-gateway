@@ -77,6 +77,7 @@ Configured under `adapters.configs.<adapterName>`:
 ### Timeouts and budget
 
 - Adapter timeout uses `min(adapter.timeoutMs, request.tmaxMs - reserve)`
+- Overall request deadline uses `min(request.tmaxMs, bid.globalTimeoutMs)` when configured
 - Timeouts are treated as no-bid for response selection
 - If all adapters time out, return 503 (overload)
 - If all adapters error, return 503 (adapter failure)

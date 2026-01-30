@@ -38,3 +38,6 @@ rules:
   allowInventory: [ SITE ]
   minBidfloor: 0.5
   allowAdapters: [ simulator, simulatorHttp ]
+
+bid:
+  globalTimeoutMs: 0
