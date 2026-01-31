@@ -59,6 +59,7 @@ Config notes:
 - `<dsp>.enabled`: toggles the dsp endpoint on/off.
 - `<dsp>.bidProbability`: probability (0.0–1.0) of returning a bid vs 204 no-bid.
 - `<dsp>.fixedPrice`: bid price returned when a bid is produced.
+- `simulator.maxInFlight`: max concurrent in-flight requests (429 when exceeded).
 - `<dsp>.currency`: value used for the `cur` field in the response.
 - `<dsp>.admTemplate`: string inserted into `adm` (often VAST XML).
 - `<dsp>.responseDelayMs`: artificial delay (in ms) before responding, to simulate bidder latency.
@@ -115,6 +116,7 @@ Emitted metrics:
 - `sim_reload_success_total`
 - `sim_reload_fail_total`
 - `sim_active_dsps`
+- `sim_rejected_total{reason=in_flight_limit}`
 
 ## Example response
 
@@ -136,10 +138,6 @@ Emitted metrics:
   "cur": "USD"
 }
 ```
-
----
-
-
 
 
 

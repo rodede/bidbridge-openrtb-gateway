@@ -7,6 +7,8 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import org.springframework.stereotype.Component;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
@@ -19,6 +21,7 @@ import java.util.UUID;
  * Adds request correlation headers and logs one summary line per request.
  */
 @Component
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class RequestLoggingFilter implements WebFilter {
     public static final String REQUEST_ID_HEADER = "X-Request-Id";
     public static final String CALLER_HEADER = "X-Caller";

@@ -8,6 +8,8 @@ spring:
 server:
   netty:
     response-timeout: 5s
+simulator:
+  maxInFlight: 200
 management:
   endpoints:
     web:

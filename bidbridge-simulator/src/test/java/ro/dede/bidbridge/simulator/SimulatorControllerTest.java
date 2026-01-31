@@ -15,6 +15,7 @@ import ro.dede.bidbridge.simulator.api.SimulatorController;
 import ro.dede.bidbridge.simulator.api.SimulatorErrorHandler;
 import ro.dede.bidbridge.simulator.config.DspConfig;
 import ro.dede.bidbridge.simulator.config.DspConfigStore;
+import ro.dede.bidbridge.simulator.config.SimulatorLimitsProperties;
 import ro.dede.bidbridge.simulator.dsp.DefaultDspBidder;
 import ro.dede.bidbridge.simulator.dsp.DspBidder;
 import ro.dede.bidbridge.simulator.dsp.DspResponseService;
@@ -138,6 +139,13 @@ class SimulatorControllerTest {
         @Bean
         MeterRegistry meterRegistry() {
             return new SimpleMeterRegistry();
+        }
+
+        @Bean
+        SimulatorLimitsProperties simulatorLimitsProperties() {
+            var properties = new SimulatorLimitsProperties();
+            properties.setMaxInFlight(1000);
+            return properties;
         }
     }
 
