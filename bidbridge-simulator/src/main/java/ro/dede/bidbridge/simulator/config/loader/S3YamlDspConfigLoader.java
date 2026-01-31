@@ -9,6 +9,12 @@ import java.io.InputStream;
 import java.net.URI;
 
 public final class S3YamlDspConfigLoader extends AbstractYamlDspConfigLoader {
+    private final String region;
+
+    public S3YamlDspConfigLoader(String region) {
+        this.region = region;
+    }
+
     @Override
     InputStream openStream(String location) {
         var s3Location = parse(location);
@@ -39,7 +45,6 @@ public final class S3YamlDspConfigLoader extends AbstractYamlDspConfigLoader {
             throw new IllegalStateException("Invalid s3 location: missing key");
         }
         key = key.startsWith("/") ? key.substring(1) : key;
-        var region = System.getenv("AWS_REGION");
         return new S3Location(bucket, key, region);
     }
 

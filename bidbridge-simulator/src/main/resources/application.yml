@@ -1,8 +1,8 @@
 spring:
   application:
     name: BidBridge Simulator
-server:
-  port: 8081
+  profiles:
+    default: local
 management:
   endpoints:
     web:
@@ -11,7 +11,3 @@ management:
   endpoint:
     health:
       show-details: never
-
-dsps:
-  file: "../dsps.yml"
-  pollIntervalMs: 2000

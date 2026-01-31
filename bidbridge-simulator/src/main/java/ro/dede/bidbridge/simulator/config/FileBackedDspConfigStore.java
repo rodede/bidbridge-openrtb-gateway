@@ -22,17 +22,21 @@ public class FileBackedDspConfigStore implements DspConfigStore {
 
     private final DspsFileProperties properties;
     private final LocalYamlDspConfigLoader localLoader = new LocalYamlDspConfigLoader();
-    private final S3YamlDspConfigLoader s3Loader = new S3YamlDspConfigLoader();
+    private final S3YamlDspConfigLoader s3Loader;
     private final AtomicReference<State> state = new AtomicReference<>(new State(Collections.emptyMap(), 0L));
 
     public FileBackedDspConfigStore(DspsFileProperties properties) {
         this.properties = properties;
+        this.s3Loader = new S3YamlDspConfigLoader(properties.getAwsRegion());
     }
 
     // Initial load on startup to seed the config store.
     @PostConstruct
     void init() {
-        reload();
+        var result = reload();
+        if (!result.success() && state.get().configs.isEmpty()) {
+            throw new IllegalStateException("Failed to load dsps configuration on startup: " + result.message());
+        }
     }
 
     @Override

@@ -23,13 +23,14 @@ public class DspConfigPoller {
     private final DspsFileProperties properties;
     private final DspConfigStore configStore;
     private final LocalYamlDspConfigLoader localLoader = new LocalYamlDspConfigLoader();
-    private final S3YamlDspConfigLoader s3Loader = new S3YamlDspConfigLoader();
+    private final S3YamlDspConfigLoader s3Loader;
     private final ScheduledExecutorService scheduler;
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     public DspConfigPoller(DspsFileProperties properties, DspConfigStore configStore) {
         this.properties = properties;
         this.configStore = configStore;
+        this.s3Loader = new S3YamlDspConfigLoader(properties.getAwsRegion());
         this.scheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
             var thread = new Thread(runnable, "dsps-poller");
             thread.setDaemon(true);

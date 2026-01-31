@@ -1,0 +1,5 @@
+server:
+  port: 8081
+dsps:
+  file: "../dsps.yml"
+  pollIntervalMs: 2000

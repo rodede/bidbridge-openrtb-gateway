@@ -17,7 +17,7 @@ abstract class AbstractYamlDspConfigLoader implements DspConfigLoader {
         } catch (RuntimeException ex) {
             throw ex;
         } catch (Exception ex) {
-            throw new IllegalStateException("Failed to load dsps.yml", ex);
+            throw new IllegalStateException("Failed to load dsps configuration", ex);
         }
     }
 

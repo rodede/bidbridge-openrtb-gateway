@@ -1,0 +1,6 @@
+server:
+  port: 8081
+dsps:
+  file: "s3://your-bucket/dsps.yml"
+  pollIntervalMs: 10000
+  awsRegion: "eu-north-1"

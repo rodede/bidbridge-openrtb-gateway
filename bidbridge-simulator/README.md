@@ -27,6 +27,21 @@ By default it looks for `dsps.yml` at the repo root. The file can either:
 2) place DSP names at the top level.
 
 `dsps.file` supports local paths and `s3://bucket/key` URLs (uses default AWS credentials).
+Profiles:
+
+- `local` → `application-local.yml` (local file - default)
+- `aws` → `application-aws.yml` (S3 file)
+
+Run with a profile: SPRING_PROFILES_ACTIVE=local|aws
+
+```bash
+SPRING_PROFILES_ACTIVE=local 
+mvn -pl bidbridge-simulator spring-boot:run
+```
+
+AWS region:
+
+- Set `AWS_REGION` or `AWS_DEFAULT_REGION` when using an S3 `dsps.file`.
 
 ```yaml
 simulator:
