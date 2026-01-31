@@ -141,11 +141,7 @@ Emitted metrics:
 
 ## TODO:
 
-1) Health endpoints (for ALB/ECS)
-Expose only:
-- GET /actuator/health/liveness
-- GET /actuator/health/readiness
-Keep the rest of /actuator/** off the public path.
+
 
 2) Timeouts + limits
 Even for a simulator:
@@ -158,11 +154,6 @@ Even for a simulator:
 - Don’t leak stack traces in responses
 - Log stack traces internally
 
-Nice-to-have (still lightweight)
-4) OpenTelemetry tracing (optional now, great later)
-Add OpenTelemetry instrumentation
-- Export to AWS X-Ray or OTLP collector later
-- This helps when multiple services call your simulator.
 
 5) Startup banner/config dump (safe)
 On boot, log:
@@ -170,14 +161,4 @@ On boot, log:
 - loaded DSP count + config version timestamp
 - whether hot reload is enabled
 
-Minimal “AWS-ready checklist”
 
-✅ /actuator/health/**
-
-✅ requestId correlation + summary logs
-
-✅ /actuator/prometheus + 3–5 custom metrics
-
-✅ input size + timeouts
-
-✅ safe error responses

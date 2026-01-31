@@ -12,6 +12,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import ro.dede.bidbridge.simulator.api.SimulatorController;
+import ro.dede.bidbridge.simulator.api.SimulatorErrorHandler;
 import ro.dede.bidbridge.simulator.config.DspConfig;
 import ro.dede.bidbridge.simulator.config.DspConfigStore;
 import ro.dede.bidbridge.simulator.dsp.DefaultDspBidder;
@@ -20,7 +21,7 @@ import ro.dede.bidbridge.simulator.dsp.DspResponseService;
 import ro.dede.bidbridge.simulator.observability.RequestLoggingFilter;
 
 @WebFluxTest(controllers = SimulatorController.class)
-@Import(SimulatorControllerTest.TestConfig.class)
+@Import({SimulatorControllerTest.TestConfig.class, SimulatorErrorHandler.class})
 class SimulatorControllerTest {
 
     @Autowired
@@ -92,6 +93,22 @@ class SimulatorControllerTest {
                 .exchange()
                 .expectStatus().isBadRequest()
                 .expectHeader().valueEquals("X-OpenRTB-Version", "2.6")
+                .expectBody()
+                .jsonPath("$.error").exists();
+    }
+
+    @Test
+    void returns400OnMalformedJson() {
+        var request = """
+                {"id":"req-1","imp":[}
+                """;
+
+        webTestClient.post()
+                .uri("/openrtb2/simulator/bid")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isBadRequest()
                 .expectBody()
                 .jsonPath("$.error").exists();
     }
