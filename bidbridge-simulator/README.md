@@ -8,6 +8,21 @@ Minimal OpenRTB bidder simulator used for local and integration testing.
 - Returns a fixed bid or no-bid based on simple config
 - Designed to be deployable later (e.g., AWS) for end-to-end testing
 
+## AWS deployment (visual)
+
+```mermaid
+flowchart LR
+    client[Client services] --> apigw[API Gateway (HTTP API)]
+    apigw --> vpc[VPC Link]
+    vpc --> alb[Internal ALB]
+    alb --> ecs[ECS Fargate tasks]
+    ecs --> sim[BidBridge Simulator]
+    sim --> s3[S3 dsps.yml]
+    cw[CloudWatch Logs] <-- ecs
+```
+
+![AWS deployment diagram](docs/aws-architecture.svg)
+
 ## Run locally
 
 From repo root:
