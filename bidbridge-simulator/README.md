@@ -139,26 +139,7 @@ Emitted metrics:
 
 ---
 
-## TODO:
 
 
-
-2) Timeouts + limits
-Even for a simulator:
-- Server request timeout
-- Max request size (avoid someone sending a huge OpenRTB payload)
-- Concurrency/backpressure (especially if using WebFlux)
-
-3) Basic error handling
-- Return clean 4xx for bad input
-- Don’t leak stack traces in responses
-- Log stack traces internally
-
-
-5) Startup banner/config dump (safe)
-On boot, log:
-- active profiles
-- loaded DSP count + config version timestamp
-- whether hot reload is enabled
 
 

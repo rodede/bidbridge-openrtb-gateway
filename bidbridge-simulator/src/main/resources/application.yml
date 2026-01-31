@@ -3,6 +3,11 @@ spring:
     name: BidBridge Simulator
   profiles:
     default: local
+  codec:
+    max-in-memory-size: 1MB
+server:
+  netty:
+    response-timeout: 5s
 management:
   endpoints:
     web:
