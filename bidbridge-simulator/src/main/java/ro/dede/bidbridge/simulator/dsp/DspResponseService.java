@@ -4,16 +4,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 import ro.dede.bidbridge.simulator.api.ErrorResponse;
 import ro.dede.bidbridge.simulator.config.DspConfigStore;
 import ro.dede.bidbridge.simulator.model.BidRequest;
+import ro.dede.bidbridge.simulator.observability.RequestLogEnricher;
 
 import java.time.Duration;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Handles DSP selection, validation, response decision, and logging.
+ * Handles DSP selection, validation, and response decision.
  */
 @Component
 public class DspResponseService {
@@ -23,55 +25,70 @@ public class DspResponseService {
 
     private final DspConfigStore configStore;
     private final DspBidder bidder;
+    private final BidRequestValidator validator;
+    private final RequestLogEnricher logEnricher;
 
     public DspResponseService(DspConfigStore configStore, DspBidder bidder) {
         this.configStore = configStore;
         this.bidder = bidder;
+        this.validator = new BidRequestValidator();
+        this.logEnricher = new RequestLogEnricher();
     }
 
-    public Mono<ResponseEntity<?>> handle(String dspName, BidRequest request) {
+    public Mono<ResponseEntity<?>> handle(String dspName, BidRequest request, ServerWebExchange exchange) {
+        var start = System.nanoTime();
+        logEnricher.captureLatency(exchange, 0);
         if (dspName == null || dspName.isBlank()) {
-            log.info("Simulator bid response: status=400 error=missing_dsp");
+            log.debug("Simulator bid response: status=400 error=missing_dsp");
+            logEnricher.captureError(exchange, "missing_dsp", "Missing dsp");
             return delayed(ResponseEntity.badRequest()
                     .header(OPENRTB_VERSION_HEADER, OPENRTB_VERSION)
                     .body(new ErrorResponse("Missing dsp")), 0);
         }
+        logEnricher.captureDsp(exchange, dspName);
         var config = configStore.getConfig(dspName);
         if (config == null) {
-            log.info("Simulator bid response: status=400 error=unknown_dsp dsp={}", dspName);
+            log.debug("Simulator bid response: status=400 error=unknown_dsp dsp={}", dspName);
+            logEnricher.captureError(exchange, "unknown_dsp", "Unknown dsp: " + dspName);
             return delayed(ResponseEntity.badRequest()
                     .header(OPENRTB_VERSION_HEADER, OPENRTB_VERSION)
                     .body(new ErrorResponse("Unknown dsp: " + dspName)), 0);
         }
+        logEnricher.captureLatency(exchange, config.getResponseDelayMs());
         if (!config.isEnabled()) {
-            log.info("Simulator bid response: status=204 reason=disabled dsp={}", dspName);
+            log.debug("Simulator bid response: status=204 reason=disabled dsp={}", dspName);
             return delayed(ResponseEntity.noContent()
                     .header(OPENRTB_VERSION_HEADER, OPENRTB_VERSION)
-                    .build(), config.getResponseDelayMs());
+                    .build(), config.getResponseDelayMs())
+                    .doOnSuccess(response -> logTiming(dspName, config.getResponseDelayMs(), start));
         }
-        var validationError = validate(request);
+        var validationError = validator.validate(request);
         if (validationError != null) {
-            log.info("Simulator bid response: status=400 error={} dsp={}", validationError, dspName);
+            log.debug("Simulator bid response: status=400 error={} dsp={}", validationError, dspName);
+            logEnricher.captureError(exchange, "invalid_request", validationError);
             return delayed(ResponseEntity.badRequest()
                     .header(OPENRTB_VERSION_HEADER, OPENRTB_VERSION)
-                    .body(new ErrorResponse(validationError)), config.getResponseDelayMs());
+                    .body(new ErrorResponse(validationError)), config.getResponseDelayMs())
+                    .doOnSuccess(response -> logTiming(dspName, config.getResponseDelayMs(), start));
         }
         if (ThreadLocalRandom.current().nextDouble() > config.getBidProbability()) {
-            log.info("Simulator bid response: status=204 reason=no-bid dsp={}", dspName);
+            log.debug("Simulator bid response: status=204 reason=no-bid dsp={}", dspName);
             return delayed(ResponseEntity.noContent()
                     .header(OPENRTB_VERSION_HEADER, OPENRTB_VERSION)
-                    .build(), config.getResponseDelayMs());
+                    .build(), config.getResponseDelayMs())
+                    .doOnSuccess(response -> logTiming(dspName, config.getResponseDelayMs(), start));
         }
         return bidder.bid(request, config)
                 .map(response -> {
                     var impId = request.imp().getFirst().id();
-                    log.info("Simulator bid response: status=200 dsp={} id={} impid={} price={} cur={}",
+                    log.debug("Simulator bid response: status=200 dsp={} id={} impid={} price={} cur={}",
                             dspName, response.id(), impId, response.seatbid().getFirst().bid().getFirst().price(), response.cur());
                     return ResponseEntity.ok()
                             .header(OPENRTB_VERSION_HEADER, OPENRTB_VERSION)
                             .body(response);
                 })
-                .flatMap(entity -> delayed(entity, config.getResponseDelayMs()));
+                .flatMap(entity -> delayed(entity, config.getResponseDelayMs()))
+                .doOnSuccess(response -> logTiming(dspName, config.getResponseDelayMs(), start));
     }
 
     private Mono<ResponseEntity<?>> delayed(ResponseEntity<?> response, int delayMs) {
@@ -81,18 +98,9 @@ public class DspResponseService {
         return Mono.delay(Duration.ofMillis(delayMs)).thenReturn(response);
     }
 
-    private String validate(BidRequest request) {
-        if (request == null || request.id() == null || request.id().isBlank()) {
-            return "id is required";
-        }
-        if (request.imp() == null || request.imp().isEmpty()) {
-            return "imp is required";
-        }
-        for (var imp : request.imp()) {
-            if (imp == null || imp.id() == null || imp.id().isBlank()) {
-                return "imp.id is required";
-            }
-        }
-        return null;
+    private void logTiming(String dspName, int delayMs, long startNanos) {
+        var durationMs = (System.nanoTime() - startNanos) / 1_000_000L;
+        log.debug("Simulator timing dsp={} latencyMs={} durationMs={}", dspName, delayMs, durationMs);
     }
+
 }

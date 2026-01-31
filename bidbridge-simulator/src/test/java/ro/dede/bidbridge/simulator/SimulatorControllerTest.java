@@ -15,6 +15,7 @@ import ro.dede.bidbridge.simulator.config.DspConfigStore;
 import ro.dede.bidbridge.simulator.dsp.DefaultDspBidder;
 import ro.dede.bidbridge.simulator.dsp.DspBidder;
 import ro.dede.bidbridge.simulator.dsp.DspResponseService;
+import ro.dede.bidbridge.simulator.observability.RequestLoggingFilter;
 
 @WebFluxTest(controllers = SimulatorController.class)
 @Import(SimulatorControllerTest.TestConfig.class)
@@ -48,10 +49,12 @@ class SimulatorControllerTest {
         webTestClient.post()
                 .uri("/openrtb2/simulator/bid")
                 .contentType(MediaType.APPLICATION_JSON)
+                .header("X-Request-Id", "test-request-id")
                 .bodyValue(request)
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().valueEquals("X-OpenRTB-Version", "2.6")
+                .expectHeader().valueEquals("X-Request-Id", "test-request-id")
                 .expectBody()
                 .jsonPath("$.id").isEqualTo("req-1")
                 .jsonPath("$.seatbid[0].bid[0].impid").isEqualTo("1")
@@ -106,6 +109,11 @@ class SimulatorControllerTest {
         @Bean
         DspResponseService dspResponseService(DspConfigStore configStore, DspBidder bidder) {
             return new DspResponseService(configStore, bidder);
+        }
+
+        @Bean
+        RequestLoggingFilter requestLoggingFilter() {
+            return new RequestLoggingFilter();
         }
     }
 

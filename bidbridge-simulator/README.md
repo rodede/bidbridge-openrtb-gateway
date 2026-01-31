@@ -83,6 +83,24 @@ wget -q -O - --header="Content-Type: application/json" --post-data='{"id":"req-1
 - `POST /admin/reload-dsps` — reloads dsps.yml on demand and returns `{status, loadedCount, versionTimestamp, message}`
 - `GET /admin/dsps` — returns the loaded DSP configs and version timestamp
 
+## Logging
+
+One-line request summary logs (plain text). Fields:
+
+- `requestId` (from `X-Request-Id`, generated if missing)
+- `caller` (from `X-Caller`)
+- `path`
+- `status`
+- `dspId`
+- `latencyMs` (simulated delay)
+- `durationMs` (total request time)
+- `errorType` / `errorMessage` (only for 4xx/5xx)
+
+Headers:
+
+- `X-Request-Id` (echoed back on response)
+- `X-Caller` (optional)
+
 ## Example response
 
 ```json
@@ -114,7 +132,7 @@ Expose only:
 - GET /actuator/health/readiness
 Keep the rest of /actuator/** off the public path.
 
-2) Structured logs + request correlation
+2) Request correlation + summary logs
 - Log one line per request (and errors) with:
 ```
 requestId (generate if missing; also echo back as header)
@@ -125,7 +143,7 @@ latencyMs simulated
 durationMs total
 caller (from JWT claim later; for now maybe X-Caller)
 ```
-In AWS you’ll read this in CloudWatch Logs, so JSON logs help a lot.
+In AWS you’ll read this in CloudWatch Logs (plain text).
 
 3) Metrics via Micrometer + Actuator
 - Expose Prometheus-format metrics (even if you don’t scrape yet):
@@ -166,7 +184,7 @@ Minimal “AWS-ready checklist”
 
 ✅ /actuator/health/**
 
-✅ JSON logs + requestId
+✅ requestId correlation + summary logs
 
 ✅ /actuator/prometheus + 3–5 custom metrics
 

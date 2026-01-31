@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 import ro.dede.bidbridge.simulator.dsp.DspResponseService;
 import ro.dede.bidbridge.simulator.model.BidRequest;
@@ -25,11 +26,12 @@ public class SimulatorController {
 
     @PostMapping(path = "/openrtb2/{dsp}/bid")
     public Mono<org.springframework.http.ResponseEntity<?>> bid(@PathVariable(name = "dsp", required = false) String dsp,
-                                                                @RequestBody BidRequest request) {
-        log.info("Simulator bid request received for {}: id={}, imps={}",
+                                                                @RequestBody BidRequest request,
+                                                                ServerWebExchange exchange) {
+        log.debug("Simulator bid request received for {}: id={}, imps={}",
                 dsp,
                 request == null ? null : request.id(),
                 request == null || request.imp() == null ? null : request.imp().size());
-        return responseService.handle(dsp, request);
+        return responseService.handle(dsp, request, exchange);
     }
 }
