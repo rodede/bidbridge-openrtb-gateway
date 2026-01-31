@@ -18,6 +18,7 @@ mvn spring-boot:run
 
 Default port: `8081`
 Actuator health: `GET /actuator/health`
+Prometheus metrics: `GET /actuator/prometheus`
 
 ## Configuration
 
@@ -101,6 +102,20 @@ Headers:
 - `X-Request-Id` (echoed back on response)
 - `X-Caller` (optional)
 
+## Metrics
+
+Prometheus endpoint:
+
+- `GET /actuator/prometheus`
+
+Emitted metrics:
+
+- `sim_requests_total{outcome=bid|nobid|error}`
+- `sim_latency_ms`
+- `sim_reload_success_total`
+- `sim_reload_fail_total`
+- `sim_active_dsps`
+
 ## Example response
 
 ```json
@@ -132,49 +147,24 @@ Expose only:
 - GET /actuator/health/readiness
 Keep the rest of /actuator/** off the public path.
 
-2) Request correlation + summary logs
-- Log one line per request (and errors) with:
-```
-requestId (generate if missing; also echo back as header)
-path
-status (204 vs 200)
-dspId chosen
-latencyMs simulated
-durationMs total
-caller (from JWT claim later; for now maybe X-Caller)
-```
-In AWS you’ll read this in CloudWatch Logs (plain text).
-
-3) Metrics via Micrometer + Actuator
-- Expose Prometheus-format metrics (even if you don’t scrape yet):
-`GET /actuator/prometheus`
-
-Track:
-- sim_requests_total{outcome=bid|nobid|error}
-- sim_latency_ms (timer)
-- sim_reload_success_total / sim_reload_fail_total
-- sim_active_dsps (gauge)
-
-Later you can wire to CloudWatch Container Insights or Prometheus/Grafana.
-
-4) Timeouts + limits
+2) Timeouts + limits
 Even for a simulator:
 - Server request timeout
 - Max request size (avoid someone sending a huge OpenRTB payload)
 - Concurrency/backpressure (especially if using WebFlux)
 
-5) Basic error handling
+3) Basic error handling
 - Return clean 4xx for bad input
 - Don’t leak stack traces in responses
 - Log stack traces internally
 
 Nice-to-have (still lightweight)
-6) OpenTelemetry tracing (optional now, great later)
+4) OpenTelemetry tracing (optional now, great later)
 Add OpenTelemetry instrumentation
 - Export to AWS X-Ray or OTLP collector later
 - This helps when multiple services call your simulator.
 
-7) Startup banner/config dump (safe)
+5) Startup banner/config dump (safe)
 On boot, log:
 - active profiles
 - loaded DSP count + config version timestamp

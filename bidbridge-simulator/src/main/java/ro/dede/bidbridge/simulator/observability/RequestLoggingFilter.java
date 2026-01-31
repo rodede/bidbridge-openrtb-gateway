@@ -3,6 +3,9 @@ package ro.dede.bidbridge.simulator.observability;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
@@ -24,6 +27,29 @@ public class RequestLoggingFilter implements WebFilter {
     public static final String START_NANOS_ATTR = "startNanos";
 
     private static final Logger log = LoggerFactory.getLogger(RequestLoggingFilter.class);
+    private static final String OUTCOME_BID = "bid";
+    private static final String OUTCOME_NOBID = "nobid";
+    private static final String OUTCOME_ERROR = "error";
+
+    private final Timer latencyTimer;
+    private final Counter bidCounter;
+    private final Counter noBidCounter;
+    private final Counter errorCounter;
+
+    public RequestLoggingFilter(MeterRegistry meterRegistry) {
+        this.latencyTimer = Timer.builder("sim_latency_ms")
+                .description("Simulator request latency in milliseconds")
+                .register(meterRegistry);
+        this.bidCounter = Counter.builder("sim_requests_total")
+                .tag("outcome", OUTCOME_BID)
+                .register(meterRegistry);
+        this.noBidCounter = Counter.builder("sim_requests_total")
+                .tag("outcome", OUTCOME_NOBID)
+                .register(meterRegistry);
+        this.errorCounter = Counter.builder("sim_requests_total")
+                .tag("outcome", OUTCOME_ERROR)
+                .register(meterRegistry);
+    }
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
@@ -66,6 +92,7 @@ public class RequestLoggingFilter implements WebFilter {
         var latencyMs = exchange.getAttribute(RequestLogAttributes.LATENCY_MS);
         var errorType = (String) exchange.getAttribute(RequestLogAttributes.ERROR_TYPE);
         var errorMessage = (String) exchange.getAttribute(RequestLogAttributes.ERROR_MESSAGE);
+        var outcome = outcomeForStatus(statusValue);
 
         var mdc = mdc(requestId, caller);
         try {
@@ -79,9 +106,27 @@ public class RequestLoggingFilter implements WebFilter {
                     durationMs,
                     statusValue >= 400 ? errorType : "",
                     statusValue >= 400 ? errorMessage : "");
+            latencyTimer.record(durationMs, java.util.concurrent.TimeUnit.MILLISECONDS);
+            incrementOutcome(outcome);
         } finally {
             mdc.close();
         }
+    }
+
+    private void incrementOutcome(String outcome) {
+        switch (outcome) {
+            case OUTCOME_BID -> bidCounter.increment();
+            case OUTCOME_NOBID -> noBidCounter.increment();
+            default -> errorCounter.increment();
+        }
+    }
+
+    private String outcomeForStatus(int statusValue) {
+        return switch (statusValue) {
+            case 200 -> OUTCOME_BID;
+            case 204 -> OUTCOME_NOBID;
+            default -> OUTCOME_ERROR;
+        };
     }
 
     private MdcScope mdc(String requestId, String caller) {

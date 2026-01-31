@@ -9,6 +9,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import ro.dede.bidbridge.simulator.api.SimulatorController;
 import ro.dede.bidbridge.simulator.config.DspConfig;
 import ro.dede.bidbridge.simulator.config.DspConfigStore;
@@ -113,7 +115,12 @@ class SimulatorControllerTest {
 
         @Bean
         RequestLoggingFilter requestLoggingFilter() {
-            return new RequestLoggingFilter();
+            return new RequestLoggingFilter(meterRegistry());
+        }
+
+        @Bean
+        MeterRegistry meterRegistry() {
+            return new SimpleMeterRegistry();
         }
     }
 
