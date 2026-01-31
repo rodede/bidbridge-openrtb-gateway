@@ -17,6 +17,7 @@ mvn spring-boot:run
 ```
 
 Default port: `8081`
+Actuator health: `GET /actuator/health`
 
 ## Configuration
 
@@ -31,6 +32,15 @@ simulator:
   admTemplate: "<vast/>"
   responseDelayMs: 0
 ```
+
+Config notes:
+
+- `enabled`: toggles the simulator endpoint on/off.
+- `bidProbability`: probability (0.0–1.0) of returning a bid vs 204 no-bid.
+- `fixedPrice`: bid price returned when a bid is produced.
+- `currency`: value used for the `cur` field in the response.
+- `admTemplate`: string inserted into `adm` (often VAST XML).
+- `responseDelayMs`: artificial delay (in ms) before responding, to simulate bidder latency.
 
 ## Example request
 
@@ -72,3 +82,5 @@ wget -q -O - --header="Content-Type: application/json" --post-data='{"id":"req-1
 - Expose port 8081
 - Keep config in environment variables or a mounted config file
 - Consider adding a Dockerfile when needed
+- Configure the load balancer health check to `/actuator/health`
+- Ensure security group allows inbound from the ALB/NLB only

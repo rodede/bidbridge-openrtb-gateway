@@ -66,6 +66,7 @@ curl -s -X POST "http://localhost:${ENGINE_PORT}/openrtb2/bid" \
   -d '{"id":"req-1","imp":[{"id":"1","banner":{},"bidfloor":0.5}],"site":{}, "tmax":10000}'
 echo
 
+RUN_LOADGEN=1
 # Optional: run the load generator (set RUN_LOADGEN=1 to enable).
 if [[ "${RUN_LOADGEN:-0}" == "1" ]]; then
   LOADGEN_REQUEST_FILE="${ROOT_DIR}/bidbridge-loadgen/src/main/resources/sample-request.json"

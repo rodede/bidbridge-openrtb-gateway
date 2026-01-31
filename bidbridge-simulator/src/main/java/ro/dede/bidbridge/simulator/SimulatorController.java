@@ -33,16 +33,19 @@ public class SimulatorController {
                 request == null ? null : request.id(),
                 request == null || request.imp() == null ? null : request.imp().size());
         if (!properties.isEnabled()) {
+            log.info("Simulator bid response: status=204 reason=disabled");
             return delayed(ResponseEntity.noContent().header(OPENRTB_VERSION_HEADER, OPENRTB_VERSION).build());
         }
         var validationError = validate(request);
         if (validationError != null) {
+            log.info("Simulator bid response: status=400 error={}", validationError);
             return delayed(ResponseEntity.badRequest()
                     .header(OPENRTB_VERSION_HEADER, OPENRTB_VERSION)
                     .body(new ErrorResponse(validationError)));
         }
 
         if (ThreadLocalRandom.current().nextDouble() > properties.getBidProbability()) {
+            log.info("Simulator bid response: status=204 reason=no-bid");
             return delayed(ResponseEntity.noContent().header(OPENRTB_VERSION_HEADER, OPENRTB_VERSION).build());
         }
 
@@ -57,6 +60,8 @@ public class SimulatorController {
                 List.of(new SeatBid(List.of(bid))),
                 currency
         );
+        log.info("Simulator bid response: status=200 id={} impid={} price={} cur={}",
+                response.id(), impId, price, currency);
 
         return delayed(ResponseEntity.ok()
                 .header(OPENRTB_VERSION_HEADER, OPENRTB_VERSION)

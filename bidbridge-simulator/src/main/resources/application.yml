@@ -3,10 +3,18 @@ spring:
     name: BidBridge Simulator
 server:
   port: 8081
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
 
 simulator:
   enabled: true
-  bidProbability: 1.0
+  bidProbability: 0.5
   fixedPrice: 100
   currency: "RON"
   admTemplate: "<vast/>"

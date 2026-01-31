@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -42,7 +43,7 @@ public final class LoadGenMain {
                 .build();
         var metrics = new LoadGenMetrics();
         var payloadIndex = new AtomicLong();
-        // Dedicated scheduler for interval ticks to avoid lingering shared threads.
+        // Dedicated scheduler for timers to avoid lingering shared threads.
         var timerScheduler = Schedulers.newSingle("loadgen-timer");
 
         var periodNanos = Math.max(1, 1_000_000_000L / config.qps);
@@ -52,13 +53,12 @@ public final class LoadGenMain {
         // Drive requests at target QPS with bounded concurrency.
         Flux.interval(Duration.ofNanos(periodNanos), timerScheduler)
                 .take(duration)
-                .flatMap(ignored -> sendOnce(client, config, payloads, payloadIndex, metrics), config.concurrency)
+                .flatMap(ignored -> sendOnce(client, config, payloads, payloadIndex, metrics, timerScheduler), config.concurrency)
                 .blockLast();
 
         var elapsedMs = (System.nanoTime() - start) / 1_000_000L;
         metrics.printSummary(elapsedMs);
         // Dispose resources explicitly to avoid lingering threads in exec:java.
-        Schedulers.shutdownNow();
         timerScheduler.dispose();
         connectionProvider.disposeLater().block();
         loopResources.disposeLater().block();
@@ -68,7 +68,8 @@ public final class LoadGenMain {
                                        LoadGenConfig config,
                                        List<String> payloads,
                                        AtomicLong payloadIndex,
-                                       LoadGenMetrics metrics) {
+                                       LoadGenMetrics metrics,
+                                       Scheduler timerScheduler) {
         return Mono.defer(() -> {
                     var start = System.nanoTime();
                     var payload = nextPayload(payloads, payloadIndex);
@@ -78,9 +79,15 @@ public final class LoadGenMain {
                             .accept(MediaType.APPLICATION_JSON)
                             .bodyValue(payload)
                             .exchangeToMono(response -> response.releaseBody().thenReturn(response.statusCode().value()))
-                            .timeout(Duration.ofMillis(config.timeoutMs))
+                            .timeout(Duration.ofMillis(config.timeoutMs), timerScheduler)
                             .doOnNext(status -> metrics.record(status, elapsedMs(start)))
-                            .doOnError(ex -> metrics.recordError(elapsedMs(start)))
+                            .doOnError(ex -> {
+                                if (ex instanceof TimeoutException) {
+                                    metrics.recordTimeout(elapsedMs(start));
+                                } else {
+                                    metrics.recordError(elapsedMs(start));
+                                }
+                            })
                             .onErrorResume(ex -> Mono.empty())
                             .then();
                 }
@@ -183,6 +190,7 @@ public final class LoadGenMain {
     private static final class LoadGenMetrics {
         private final LongAdder total = new LongAdder();
         private final LongAdder errors = new LongAdder();
+        private final LongAdder timeouts = new LongAdder();
         private final LongAdder status200 = new LongAdder();
         private final LongAdder status2xx = new LongAdder();
         private final LongAdder status204 = new LongAdder();
@@ -223,6 +231,14 @@ public final class LoadGenMain {
             updateMax(maxLatencyMs, latencyMs);
         }
 
+        void recordTimeout(long latencyMs) {
+            total.increment();
+            timeouts.increment();
+            latencySumMs.add(latencyMs);
+            updateMin(minLatencyMs, latencyMs);
+            updateMax(maxLatencyMs, latencyMs);
+        }
+
         void printSummary(long elapsedMs) {
             var totalCount = total.sum();
             var avgLatency = totalCount == 0 ? 0 : latencySumMs.sum() / totalCount;
@@ -230,7 +246,7 @@ public final class LoadGenMain {
             var maxLatency = maxLatencyMs.get();
 
             System.out.println("LoadGen summary");
-            System.out.println("total=" + totalCount + " errors=" + errors.sum());
+            System.out.println("total=" + totalCount + " errors=" + errors.sum() + " timeouts(client)=" + timeouts.sum());
             System.out.println("200=" + status200.sum() + " 2xx=" + status2xx.sum()
                     + " 204=" + status204.sum() + " 4xx=" + status4xx.sum()
                     + " 5xx=" + status5xx.sum() + " other=" + statusOther.sum());

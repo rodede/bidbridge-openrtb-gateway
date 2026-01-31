@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
+// Minimal OpenRTB DTOs used only by the simulator controller.
 record BidRequest(
         String id,
         List<Imp> imp
