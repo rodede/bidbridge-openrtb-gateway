@@ -1,55 +1,46 @@
-package ro.dede.bidbridge.simulator;
+package ro.dede.bidbridge.simulator.config.loader;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.LoaderOptions;
+import org.yaml.snakeyaml.Yaml;
+import ro.dede.bidbridge.simulator.config.DspConfig;
 
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * Loads per-DSP configuration from a YAML file.
- */
-@Component
-class YamlDspConfigLoader implements DspConfigLoader {
-    private static final Logger log = LoggerFactory.getLogger(YamlDspConfigLoader.class);
-
+abstract class AbstractYamlDspConfigLoader implements DspConfigLoader {
     @Override
-    public DspConfigLoadResult load(Path path) {
-        if (!Files.exists(path)) {
-            throw new IllegalStateException("dsps.yml not found at " + path.toAbsolutePath());
-        }
-        var options = new LoaderOptions();
-        options.setAllowDuplicateKeys(false);
-        var yaml = new Yaml(options);
-        try (InputStream input = Files.newInputStream(path)) {
-            var root = yaml.load(input);
-            if (!(root instanceof Map<?, ?> rootMap)) {
-                throw new IllegalStateException("Invalid dsps.yml: expected a map at root");
-            }
-            Map<?, ?> dspsMap;
-            var dspsNode = rootMap.get("dsps");
-            if (dspsNode instanceof Map<?, ?> map) {
-                dspsMap = map;
-            } else {
-                dspsMap = rootMap;
-            }
-            var configs = parseConfigs(dspsMap);
-            validate(configs);
-            var timestamp = Files.getLastModifiedTime(path).toMillis();
-            return new DspConfigLoadResult(configs, timestamp);
+    public DspConfigLoadResult load(String location) {
+        try (InputStream input = openStream(location)) {
+            return loadFrom(input, lastModified(location));
         } catch (RuntimeException ex) {
-            log.warn("Failed to load dsps.yml: {}", ex.getMessage());
             throw ex;
         } catch (Exception ex) {
             throw new IllegalStateException("Failed to load dsps.yml", ex);
         }
+    }
+
+    abstract InputStream openStream(String location) throws Exception;
+
+    DspConfigLoadResult loadFrom(InputStream input, long versionTimestamp) {
+        var options = new LoaderOptions();
+        options.setAllowDuplicateKeys(false);
+        var yaml = new Yaml(options);
+        var root = yaml.load(input);
+        if (!(root instanceof Map<?, ?> rootMap)) {
+            throw new IllegalStateException("Invalid dsps.yml: expected a map at root");
+        }
+        Map<?, ?> dspsMap;
+        var dspsNode = rootMap.get("dsps");
+        if (dspsNode instanceof Map<?, ?> map) {
+            dspsMap = map;
+        } else {
+            dspsMap = rootMap;
+        }
+        var configs = parseConfigs(dspsMap);
+        validate(configs);
+        return new DspConfigLoadResult(configs, versionTimestamp);
     }
 
     private Map<String, DspConfig> parseConfigs(Map<?, ?> dspsMap) {

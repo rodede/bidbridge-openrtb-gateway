@@ -1,7 +1,12 @@
-package ro.dede.bidbridge.simulator;
+package ro.dede.bidbridge.simulator.dsp;
 
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import ro.dede.bidbridge.simulator.config.DspConfig;
+import ro.dede.bidbridge.simulator.model.Bid;
+import ro.dede.bidbridge.simulator.model.BidRequest;
+import ro.dede.bidbridge.simulator.model.BidResponse;
+import ro.dede.bidbridge.simulator.model.SeatBid;
 
 import java.util.List;
 

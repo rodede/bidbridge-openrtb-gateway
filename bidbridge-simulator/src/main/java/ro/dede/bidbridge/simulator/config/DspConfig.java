@@ -1,4 +1,4 @@
-package ro.dede.bidbridge.simulator;
+package ro.dede.bidbridge.simulator.config;
 
 /**
  * Per-DSP response configuration used by the simulator.

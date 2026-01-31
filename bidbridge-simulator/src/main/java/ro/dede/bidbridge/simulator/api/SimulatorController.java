@@ -1,4 +1,4 @@
-package ro.dede.bidbridge.simulator;
+package ro.dede.bidbridge.simulator.api;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
+import ro.dede.bidbridge.simulator.dsp.DspResponseService;
+import ro.dede.bidbridge.simulator.model.BidRequest;
 
 /**
  * OpenRTB simulator endpoint that dispatches per-DSP behavior based on path.

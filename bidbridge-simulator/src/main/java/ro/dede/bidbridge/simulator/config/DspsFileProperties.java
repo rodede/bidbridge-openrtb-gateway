@@ -1,4 +1,4 @@
-package ro.dede.bidbridge.simulator;
+package ro.dede.bidbridge.simulator.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "dsps")
 public class DspsFileProperties {
     private String file = "dsps.yml";
+    private int pollIntervalMs = 2000;
 
     public String getFile() {
         return file;
@@ -17,5 +18,13 @@ public class DspsFileProperties {
 
     public void setFile(String file) {
         this.file = file;
+    }
+
+    public int getPollIntervalMs() {
+        return pollIntervalMs;
+    }
+
+    public void setPollIntervalMs(int pollIntervalMs) {
+        this.pollIntervalMs = pollIntervalMs;
     }
 }

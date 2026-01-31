@@ -26,6 +26,8 @@ By default it looks for `dsps.yml` at the repo root. The file can either:
 1) use a top-level `dsps:` map, or
 2) place DSP names at the top level.
 
+`dsps.file` supports local paths and `s3://bucket/key` URLs (uses default AWS credentials).
+
 ```yaml
 simulator:
   enabled: true
@@ -45,6 +47,10 @@ Config notes:
 - `<dsp>.admTemplate`: string inserted into `adm` (often VAST XML).
 - `<dsp>.responseDelayMs`: artificial delay (in ms) before responding, to simulate bidder latency.
 
+Polling:
+
+- `dsps.pollIntervalMs`: reload interval in milliseconds (default 2000).
+
 ## Example request
 
 ```json
@@ -56,6 +62,11 @@ Config notes:
 ```bash
 wget -q -O - --header="Content-Type: application/json" --post-data='{"id":"req-1","imp":[{"id":"1"}]}' http://localhost:8081/openrtb2/simulator/bid
 ```
+
+## Admin endpoints
+
+- `POST /admin/reload-dsps` — reloads dsps.yml on demand and returns `{status, loadedCount, versionTimestamp, message}`
+- `GET /admin/dsps` — returns the loaded DSP configs and version timestamp
 
 ## Example response
 
@@ -80,10 +91,70 @@ wget -q -O - --header="Content-Type: application/json" --post-data='{"id":"req-1
 
 ---
 
-## Notes for AWS
+## TODO:
 
-- Expose port 8081
-- Keep config in environment variables or a mounted config file
-- Consider adding a Dockerfile when needed
-- Configure the load balancer health check to `/actuator/health`
-- Ensure security group allows inbound from the ALB/NLB only
+1) Health endpoints (for ALB/ECS)
+Expose only:
+- GET /actuator/health/liveness
+- GET /actuator/health/readiness
+Keep the rest of /actuator/** off the public path.
+
+2) Structured logs + request correlation
+- Log one line per request (and errors) with:
+```
+requestId (generate if missing; also echo back as header)
+path
+status (204 vs 200)
+dspId chosen
+latencyMs simulated
+durationMs total
+caller (from JWT claim later; for now maybe X-Caller)
+```
+In AWS you’ll read this in CloudWatch Logs, so JSON logs help a lot.
+
+3) Metrics via Micrometer + Actuator
+- Expose Prometheus-format metrics (even if you don’t scrape yet):
+`GET /actuator/prometheus`
+
+Track:
+- sim_requests_total{outcome=bid|nobid|error}
+- sim_latency_ms (timer)
+- sim_reload_success_total / sim_reload_fail_total
+- sim_active_dsps (gauge)
+
+Later you can wire to CloudWatch Container Insights or Prometheus/Grafana.
+
+4) Timeouts + limits
+Even for a simulator:
+- Server request timeout
+- Max request size (avoid someone sending a huge OpenRTB payload)
+- Concurrency/backpressure (especially if using WebFlux)
+
+5) Basic error handling
+- Return clean 4xx for bad input
+- Don’t leak stack traces in responses
+- Log stack traces internally
+
+Nice-to-have (still lightweight)
+6) OpenTelemetry tracing (optional now, great later)
+Add OpenTelemetry instrumentation
+- Export to AWS X-Ray or OTLP collector later
+- This helps when multiple services call your simulator.
+
+7) Startup banner/config dump (safe)
+On boot, log:
+- active profiles
+- loaded DSP count + config version timestamp
+- whether hot reload is enabled
+
+Minimal “AWS-ready checklist”
+
+✅ /actuator/health/**
+
+✅ JSON logs + requestId
+
+✅ /actuator/prometheus + 3–5 custom metrics
+
+✅ input size + timeouts
+
+✅ safe error responses

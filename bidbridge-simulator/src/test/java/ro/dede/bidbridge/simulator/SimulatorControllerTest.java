@@ -9,6 +9,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import ro.dede.bidbridge.simulator.api.SimulatorController;
+import ro.dede.bidbridge.simulator.config.DspConfig;
+import ro.dede.bidbridge.simulator.config.DspConfigStore;
+import ro.dede.bidbridge.simulator.dsp.DefaultDspBidder;
+import ro.dede.bidbridge.simulator.dsp.DspBidder;
+import ro.dede.bidbridge.simulator.dsp.DspResponseService;
 
 @WebFluxTest(controllers = SimulatorController.class)
 @Import(SimulatorControllerTest.TestConfig.class)
@@ -117,8 +123,18 @@ class SimulatorControllerTest {
         }
 
         @Override
+        public java.util.Map<String, DspConfig> allConfigs() {
+            return java.util.Map.copyOf(configs);
+        }
+
+        @Override
         public ReloadResult reload() {
             return new ReloadResult(true, configs.size(), 0L, "test");
+        }
+
+        @Override
+        public Snapshot snapshot() {
+            return new Snapshot(configs.size(), 0L);
         }
     }
 }

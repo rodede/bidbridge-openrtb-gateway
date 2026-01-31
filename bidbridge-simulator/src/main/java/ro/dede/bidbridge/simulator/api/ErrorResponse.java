@@ -1,4 +1,4 @@
-package ro.dede.bidbridge.simulator;
+package ro.dede.bidbridge.simulator.api;
 
 /**
  * Simple error response for invalid requests.
