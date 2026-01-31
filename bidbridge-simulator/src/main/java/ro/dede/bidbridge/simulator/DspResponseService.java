@@ -18,11 +18,11 @@ public class DspResponseService {
     private static final String OPENRTB_VERSION_HEADER = "X-OpenRTB-Version";
     private static final String OPENRTB_VERSION = "2.6";
 
-    private final DspProperties properties;
+    private final DspConfigStore configStore;
     private final DspBidder bidder;
 
-    public DspResponseService(DspProperties properties, DspBidder bidder) {
-        this.properties = properties;
+    public DspResponseService(DspConfigStore configStore, DspBidder bidder) {
+        this.configStore = configStore;
         this.bidder = bidder;
     }
 
@@ -33,7 +33,7 @@ public class DspResponseService {
                     .header(OPENRTB_VERSION_HEADER, OPENRTB_VERSION)
                     .body(new ErrorResponse("Missing dsp")), 0);
         }
-        var config = properties.getConfigs().get(dspName);
+        var config = configStore.getConfig(dspName);
         if (config == null) {
             log.info("Simulator bid response: status=400 error=unknown_dsp dsp={}", dspName);
             return delayed(ResponseEntity.badRequest()

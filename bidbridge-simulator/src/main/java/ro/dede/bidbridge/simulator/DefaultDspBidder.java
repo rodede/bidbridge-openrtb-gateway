@@ -12,7 +12,7 @@ import java.util.List;
 public class DefaultDspBidder implements DspBidder {
 
     @Override
-    public Mono<BidResponse> bid(BidRequest request, DspProperties.DspConfig config) {
+    public Mono<BidResponse> bid(BidRequest request, DspConfig config) {
         var impId = request.imp().getFirst().id();
         var bidId = "bid-" + request.id();
         var price = config.getFixedPrice() > 0 ? config.getFixedPrice() : 0.01;

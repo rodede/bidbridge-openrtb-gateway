@@ -18,19 +18,19 @@ class SimulatorControllerTest {
     private WebTestClient webTestClient;
 
     @Autowired
-    private DspProperties properties;
-    private DspProperties.DspConfig config;
+    private InMemoryDspConfigStore configStore;
+    private DspConfig config;
 
     @BeforeEach
     void setUp() {
-        config = new DspProperties.DspConfig();
+        config = new DspConfig();
         config.setEnabled(true);
         config.setBidProbability(1.0);
         config.setFixedPrice(1.25);
         config.setCurrency("USD");
         config.setAdmTemplate("<vast/>");
         config.setResponseDelayMs(0);
-        properties.getConfigs().put("simulator", config);
+        configStore.put("simulator", config);
     }
 
     @Test
@@ -88,8 +88,8 @@ class SimulatorControllerTest {
     @TestConfiguration
     static class TestConfig {
         @Bean
-        DspProperties dspProperties() {
-            return new DspProperties();
+        InMemoryDspConfigStore dspConfigStore() {
+            return new InMemoryDspConfigStore();
         }
 
         @Bean
@@ -98,8 +98,27 @@ class SimulatorControllerTest {
         }
 
         @Bean
-        DspResponseService dspResponseService(DspProperties properties, DspBidder bidder) {
-            return new DspResponseService(properties, bidder);
+        DspResponseService dspResponseService(DspConfigStore configStore, DspBidder bidder) {
+            return new DspResponseService(configStore, bidder);
+        }
+    }
+
+    static final class InMemoryDspConfigStore implements DspConfigStore {
+        private final java.util.concurrent.ConcurrentHashMap<String, DspConfig> configs =
+                new java.util.concurrent.ConcurrentHashMap<>();
+
+        void put(String name, DspConfig config) {
+            configs.put(name, config);
+        }
+
+        @Override
+        public DspConfig getConfig(String dspName) {
+            return configs.get(dspName);
+        }
+
+        @Override
+        public ReloadResult reload() {
+            return new ReloadResult(true, configs.size(), 0L, "test");
         }
     }
 }

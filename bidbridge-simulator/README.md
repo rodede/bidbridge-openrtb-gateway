@@ -21,28 +21,29 @@ Actuator health: `GET /actuator/health`
 
 ## Configuration
 
-`bidbridge-simulator/src/main/resources/application.yml`
+`bidbridge-simulator/src/main/resources/application.yml` points to an external `dsps.yml`.
+By default it looks for `dsps.yml` at the repo root. The file can either:
+1) use a top-level `dsps:` map, or
+2) place DSP names at the top level.
 
 ```yaml
-dsps:
-  configs:
-    simulator:
-      enabled: true
-      bidProbability: 1.0
-      fixedPrice: 1.5
-      currency: "USD"
-      admTemplate: "<vast/>"
-      responseDelayMs: 0
+simulator:
+  enabled: true
+  bidProbability: 1.0
+  fixedPrice: 1.5
+  currency: "USD"
+  admTemplate: "<vast/>"
+  responseDelayMs: 0
 ```
 
 Config notes:
 
-- `configs.<dsp>.enabled`: toggles the dsp endpoint on/off.
-- `configs.<dsp>.bidProbability`: probability (0.0–1.0) of returning a bid vs 204 no-bid.
-- `configs.<dsp>.fixedPrice`: bid price returned when a bid is produced.
-- `configs.<dsp>.currency`: value used for the `cur` field in the response.
-- `configs.<dsp>.admTemplate`: string inserted into `adm` (often VAST XML).
-- `configs.<dsp>.responseDelayMs`: artificial delay (in ms) before responding, to simulate bidder latency.
+- `<dsp>.enabled`: toggles the dsp endpoint on/off.
+- `<dsp>.bidProbability`: probability (0.0–1.0) of returning a bid vs 204 no-bid.
+- `<dsp>.fixedPrice`: bid price returned when a bid is produced.
+- `<dsp>.currency`: value used for the `cur` field in the response.
+- `<dsp>.admTemplate`: string inserted into `adm` (often VAST XML).
+- `<dsp>.responseDelayMs`: artificial delay (in ms) before responding, to simulate bidder latency.
 
 ## Example request
 
