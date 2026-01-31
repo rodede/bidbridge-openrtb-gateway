@@ -33,6 +33,7 @@ public final class LoadGenMain {
             System.err.println("Replay file is empty.");
             System.exit(1);
         }
+        // Use dedicated client resources so we can dispose cleanly after the run.
         var connectionProvider = ConnectionProvider.create("loadgen", config.concurrency * 2);
         var loopResources = LoopResources.create("loadgen", Math.min(2, config.concurrency), true);
         var httpClient = HttpClient.create(connectionProvider).runOn(loopResources);
@@ -41,12 +42,14 @@ public final class LoadGenMain {
                 .build();
         var metrics = new LoadGenMetrics();
         var payloadIndex = new AtomicLong();
+        // Dedicated scheduler for interval ticks to avoid lingering shared threads.
         var timerScheduler = Schedulers.newSingle("loadgen-timer");
 
         var periodNanos = Math.max(1, 1_000_000_000L / config.qps);
         var duration = Duration.ofSeconds(config.durationSeconds);
         var start = System.nanoTime();
 
+        // Drive requests at target QPS with bounded concurrency.
         Flux.interval(Duration.ofNanos(periodNanos), timerScheduler)
                 .take(duration)
                 .flatMap(ignored -> sendOnce(client, config, payloads, payloadIndex, metrics), config.concurrency)
@@ -54,6 +57,7 @@ public final class LoadGenMain {
 
         var elapsedMs = (System.nanoTime() - start) / 1_000_000L;
         metrics.printSummary(elapsedMs);
+        // Dispose resources explicitly to avoid lingering threads in exec:java.
         Schedulers.shutdownNow();
         timerScheduler.dispose();
         connectionProvider.disposeLater().block();
@@ -164,7 +168,7 @@ public final class LoadGenMain {
             System.err.println("""
                     Usage:
                       --url <endpoint> (--request-file <path> | --replay-file <path>) [options]
-
+                    
                     Options:
                       --replay-file <path>     (JSON lines, one request per line)
                       --qps <int>               (default: 50)
@@ -179,10 +183,12 @@ public final class LoadGenMain {
     private static final class LoadGenMetrics {
         private final LongAdder total = new LongAdder();
         private final LongAdder errors = new LongAdder();
+        private final LongAdder status200 = new LongAdder();
         private final LongAdder status2xx = new LongAdder();
         private final LongAdder status204 = new LongAdder();
         private final LongAdder status4xx = new LongAdder();
         private final LongAdder status5xx = new LongAdder();
+        private final LongAdder statusOther = new LongAdder();
         private final LongAdder latencySumMs = new LongAdder();
         private final AtomicLong minLatencyMs = new AtomicLong(Long.MAX_VALUE);
         private final AtomicLong maxLatencyMs = new AtomicLong(0);
@@ -192,14 +198,20 @@ public final class LoadGenMain {
             latencySumMs.add(latencyMs);
             updateMin(minLatencyMs, latencyMs);
             updateMax(maxLatencyMs, latencyMs);
-            if (status == 204) {
-                status204.increment();
-            } else if (status >= 200 && status < 300) {
-                status2xx.increment();
-            } else if (status >= 400 && status < 500) {
-                status4xx.increment();
-            } else if (status >= 500) {
-                status5xx.increment();
+            switch (status) {
+                case 200 -> status200.increment();
+                case 204 -> status204.increment();
+                default -> {
+                    if (status > 200 && status < 300) {
+                        status2xx.increment();
+                    } else if (status >= 400 && status < 500) {
+                        status4xx.increment();
+                    } else if (status >= 500) {
+                        status5xx.increment();
+                    } else {
+                        statusOther.increment();
+                    }
+                }
             }
         }
 
@@ -219,8 +231,9 @@ public final class LoadGenMain {
 
             System.out.println("LoadGen summary");
             System.out.println("total=" + totalCount + " errors=" + errors.sum());
-            System.out.println("2xx=" + status2xx.sum() + " 204=" + status204.sum()
-                    + " 4xx=" + status4xx.sum() + " 5xx=" + status5xx.sum());
+            System.out.println("200=" + status200.sum() + " 2xx=" + status2xx.sum()
+                    + " 204=" + status204.sum() + " 4xx=" + status4xx.sum()
+                    + " 5xx=" + status5xx.sum() + " other=" + statusOther.sum());
             System.out.println("latency_ms avg=" + avgLatency + " min=" + minLatency + " max=" + maxLatency);
             if (elapsedMs > 0) {
                 var achievedQps = (totalCount * 1000.0) / elapsedMs;

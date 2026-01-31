@@ -27,3 +27,4 @@ replay_pid*
 # DD
 .DS_Store
 .vscode/
+.idea/
