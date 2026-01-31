@@ -16,24 +16,30 @@ From repo root:
 mvn spring-boot:run
 ```
 
-Default port: `8081`
-Actuator health: `GET /actuator/health`
-Prometheus metrics: `GET /actuator/prometheus`
+Default port: `8081`.
+
+Actuator endpoints:
+
+- `GET /actuator/health`
+- `GET /actuator/prometheus`
 
 ## Configuration
 
 `bidbridge-simulator/src/main/resources/application.yml` points to an external `dsps.yml`.
-By default it looks for `dsps.yml` at the repo root. The file can either:
+By default it looks for `dsps.yml` at the repo root.
+
+The file can either:
 1) use a top-level `dsps:` map, or
 2) place DSP names at the top level.
 
 `dsps.file` supports local paths and `s3://bucket/key` URLs (uses default AWS credentials).
+
 Profiles:
 
 - `local` → `application-local.yml` (local file - default)
 - `aws` → `application-aws.yml` (S3 file)
 
-Run with a profile: SPRING_PROFILES_ACTIVE=local|aws
+Run with a profile: `SPRING_PROFILES_ACTIVE=local|aws`
 
 ```bash
 SPRING_PROFILES_ACTIVE=local 
@@ -41,7 +47,6 @@ mvn -pl bidbridge-simulator spring-boot:run
 ```
 
 AWS region:
-
 - Set `AWS_REGION` or `AWS_DEFAULT_REGION` when using an S3 `dsps.file`.
 
 ```yaml
@@ -65,7 +70,6 @@ Config notes:
 - `<dsp>.responseDelayMs`: artificial delay (in ms) before responding, to simulate bidder latency.
 
 Polling:
-
 - `dsps.pollIntervalMs`: reload interval in milliseconds (default 2000).
 
 ## Example request
@@ -74,10 +78,10 @@ Polling:
 {"id":"req-1","imp":[{"id":"1"}]}
 ```
 
-## Example wget
+## Example curl
 
 ```bash
-wget -q -O - --header="Content-Type: application/json" --post-data='{"id":"req-1","imp":[{"id":"1"}]}' http://localhost:8081/openrtb2/simulator/bid
+curl -s -H "Content-Type: application/json" -d '{"id":"req-1","imp":[{"id":"1"}]}' http://localhost:8081/openrtb2/simulator/bid
 ```
 
 ## Admin endpoints
@@ -138,6 +142,3 @@ Emitted metrics:
   "cur": "USD"
 }
 ```
-
-
-
