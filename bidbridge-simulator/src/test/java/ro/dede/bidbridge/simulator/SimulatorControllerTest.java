@@ -18,16 +18,19 @@ class SimulatorControllerTest {
     private WebTestClient webTestClient;
 
     @Autowired
-    private SimulatorProperties properties;
+    private DspProperties properties;
+    private DspProperties.DspConfig config;
 
     @BeforeEach
     void setUp() {
-        properties.setEnabled(true);
-        properties.setBidProbability(1.0);
-        properties.setFixedPrice(1.25);
-        properties.setCurrency("USD");
-        properties.setAdmTemplate("<vast/>");
-        properties.setResponseDelayMs(0);
+        config = new DspProperties.DspConfig();
+        config.setEnabled(true);
+        config.setBidProbability(1.0);
+        config.setFixedPrice(1.25);
+        config.setCurrency("USD");
+        config.setAdmTemplate("<vast/>");
+        config.setResponseDelayMs(0);
+        properties.getConfigs().put("simulator", config);
     }
 
     @Test
@@ -37,7 +40,7 @@ class SimulatorControllerTest {
                 """;
 
         webTestClient.post()
-                .uri("/openrtb2/bid")
+                .uri("/openrtb2/simulator/bid")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .exchange()
@@ -51,13 +54,13 @@ class SimulatorControllerTest {
 
     @Test
     void returnsNoBidWhenProbabilityIsZero() {
-        properties.setBidProbability(0.0);
+        config.setBidProbability(0.0);
         var request = """
                 {"id":"req-2","imp":[{"id":"1"}]}
                 """;
 
         webTestClient.post()
-                .uri("/openrtb2/bid")
+                .uri("/openrtb2/simulator/bid")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .exchange()
@@ -72,7 +75,7 @@ class SimulatorControllerTest {
                 """;
 
         webTestClient.post()
-                .uri("/openrtb2/bid")
+                .uri("/openrtb2/simulator/bid")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .exchange()
@@ -85,8 +88,18 @@ class SimulatorControllerTest {
     @TestConfiguration
     static class TestConfig {
         @Bean
-        SimulatorProperties simulatorProperties() {
-            return new SimulatorProperties();
+        DspProperties dspProperties() {
+            return new DspProperties();
+        }
+
+        @Bean
+        DspBidder dspBidder() {
+            return new DefaultDspBidder();
+        }
+
+        @Bean
+        DspResponseService dspResponseService(DspProperties properties, DspBidder bidder) {
+            return new DspResponseService(properties, bidder);
         }
     }
 }

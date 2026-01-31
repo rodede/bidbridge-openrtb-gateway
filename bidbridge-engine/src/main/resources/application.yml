@@ -31,7 +31,7 @@ adapters:
       admTemplate: "<vast/>"
     simulatorHttp:
       enabled: true
-      endpoint: "http://localhost:8081/openrtb2/bid"
+      endpoint: "http://localhost:8081/openrtb2/simulator/bid"
       timeoutMs: 60000
 
 rules:

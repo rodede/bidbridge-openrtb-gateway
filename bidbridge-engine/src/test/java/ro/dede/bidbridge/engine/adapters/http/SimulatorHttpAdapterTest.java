@@ -82,7 +82,7 @@ class SimulatorHttpAdapterTest {
     private AdapterProperties.AdapterConfig configWithEndpoint() {
         var config = new AdapterProperties.AdapterConfig();
         config.setEnabled(true);
-        config.setEndpoint("http://localhost:8081/openrtb2/bid");
+        config.setEndpoint("http://localhost:8081/openrtb2/simulator/bid");
         return config;
     }
 

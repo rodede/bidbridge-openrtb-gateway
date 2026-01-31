@@ -4,7 +4,7 @@ Minimal OpenRTB bidder simulator used for local and integration testing.
 
 ## Purpose
 
-- Accepts OpenRTB `POST /openrtb2/bid`
+- Accepts OpenRTB `POST /openrtb2/{dsp}/bid`
 - Returns a fixed bid or no-bid based on simple config
 - Designed to be deployable later (e.g., AWS) for end-to-end testing
 
@@ -24,23 +24,25 @@ Actuator health: `GET /actuator/health`
 `bidbridge-simulator/src/main/resources/application.yml`
 
 ```yaml
-simulator:
-  enabled: true
-  bidProbability: 1.0
-  fixedPrice: 1.5
-  currency: "USD"
-  admTemplate: "<vast/>"
-  responseDelayMs: 0
+dsps:
+  configs:
+    simulator:
+      enabled: true
+      bidProbability: 1.0
+      fixedPrice: 1.5
+      currency: "USD"
+      admTemplate: "<vast/>"
+      responseDelayMs: 0
 ```
 
 Config notes:
 
-- `enabled`: toggles the simulator endpoint on/off.
-- `bidProbability`: probability (0.0–1.0) of returning a bid vs 204 no-bid.
-- `fixedPrice`: bid price returned when a bid is produced.
-- `currency`: value used for the `cur` field in the response.
-- `admTemplate`: string inserted into `adm` (often VAST XML).
-- `responseDelayMs`: artificial delay (in ms) before responding, to simulate bidder latency.
+- `configs.<dsp>.enabled`: toggles the dsp endpoint on/off.
+- `configs.<dsp>.bidProbability`: probability (0.0–1.0) of returning a bid vs 204 no-bid.
+- `configs.<dsp>.fixedPrice`: bid price returned when a bid is produced.
+- `configs.<dsp>.currency`: value used for the `cur` field in the response.
+- `configs.<dsp>.admTemplate`: string inserted into `adm` (often VAST XML).
+- `configs.<dsp>.responseDelayMs`: artificial delay (in ms) before responding, to simulate bidder latency.
 
 ## Example request
 
@@ -51,7 +53,7 @@ Config notes:
 ## Example wget
 
 ```bash
-wget -q -O - --header="Content-Type: application/json" --post-data='{"id":"req-1","imp":[{"id":"1"}]}' http://localhost:8081/openrtb2/bid
+wget -q -O - --header="Content-Type: application/json" --post-data='{"id":"req-1","imp":[{"id":"1"}]}' http://localhost:8081/openrtb2/simulator/bid
 ```
 
 ## Example response

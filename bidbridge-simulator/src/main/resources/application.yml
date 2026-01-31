@@ -12,10 +12,12 @@ management:
     health:
       show-details: never
 
-simulator:
-  enabled: true
-  bidProbability: 0.5
-  fixedPrice: 100
-  currency: "RON"
-  admTemplate: "<vast/>"
-  responseDelayMs: 0
+dsps:
+  configs:
+    simulator:
+      enabled: true
+      bidProbability: 0.5
+      fixedPrice: 100
+      currency: "RON"
+      admTemplate: "<vast/>"
+      responseDelayMs: 0

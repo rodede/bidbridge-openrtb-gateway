@@ -51,7 +51,7 @@ fi
 
 echo "Starting engine on :${ENGINE_PORT} (HTTP adapter to simulator)..."
 mvn -pl bidbridge-engine spring-boot:run \
-  -Dspring-boot.run.arguments="--rules.allowAdapters=simulatorHttp" \
+  -Dspring-boot.run.arguments="--rules.allowAdapters=simulator,simulatorHttp" \
   >/tmp/bidbridge-engine.log 2>&1 &
 ENGINE_PID=$!
 
