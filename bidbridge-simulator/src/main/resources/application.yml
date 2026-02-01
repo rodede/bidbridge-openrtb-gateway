@@ -13,6 +13,9 @@ simulator:
   auth:
     enabled: false
 management:
+  info:
+    build:
+      enabled: true
   endpoints:
     web:
       exposure:
@@ -22,3 +25,9 @@ management:
       show-details: never
       probes:
         enabled: true
+info:
+  app:
+    name: "${spring.application.name}"
+    version: "${build.version:unknown}"
+    buildTime: "${build.time:unknown}"
+    gitSha: "${GIT_SHA:unknown}"
