@@ -126,3 +126,7 @@ Task role needs:
 - Add API Gateway HTTP API + VPC Link + JWT authorizer (Cognito).
 - Add WAF rate limiting + API Gateway throttles.
 - Lock down management endpoints (internal only).
+
+
+  2. Add ECS task definition template
+  3. Add short ECS quickstart doc

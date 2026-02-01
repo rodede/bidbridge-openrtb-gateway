@@ -31,7 +31,23 @@ From repo root:
 mvn spring-boot:run
 ```
 
-Default port: `8081`.
+Build Docker image from repo root:
+
+```bash
+docker build -t bidbridge-simulator:local -f bidbridge-simulator/Dockerfile .
+```
+
+Override container port (default 8081):
+
+```bash
+docker run -e SERVER_PORT=8085 -p 8085:8085 <image>
+```
+
+```bash  
+docker build -t bidbridge-simulator:local -f bidbridge-simulator/Dockerfile .
+docker run --rm -p 8081:8081 -v "$PWD/dsps.yml:/simulator/dsps.yml:ro" -e DSPS_FILE=/simulator/dsps.yml bidbridge-simulator:local
+curl -i http://localhost:8081/actuator/info
+```
 
 Actuator endpoints:
 
