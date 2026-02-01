@@ -130,3 +130,36 @@ Task role needs:
 
   2. Add ECS task definition template
   3. Add short ECS quickstart doc
+
+   - AWS target architecture: API Gateway (JWT authorizer) → VPC Link → internal ALB → ECS Fargate; S3-backed dsps.yml; admin endpoint protected.
+
+
+  1. Build (auto)
+
+  - Trigger: push, pull_request
+  - Steps: mvn -pl bidbridge-simulator -DskipTests package or run tests if you want
+  - Outputs: archived jar or just validate build.
+
+    2. Deploy (manual)
+
+  - Trigger: workflow_dispatch with inputs (environment, tag, dsps file location, etc.)
+  - Steps:
+      - Build Docker image from bidbridge-simulator/Dockerfile
+      - Push to ECR
+      - Update ECS task definition + service (or register new task revision)
+      - Optional: wait for service stability
+
+
+        What I need from you to implement
+
+  - AWS auth method: GitHub OIDC (recommended) or static access keys?
+  - ECS target: cluster name, service name, task definition family
+  - ECR repo name and AWS region
+  - Any runtime env vars that must be injected (e.g., SPRING_PROFILES_ACTIVE=aws, DSPS_FILE=s3://...)
+
+
+  Minimal manual deploy flow you can use right away
+
+  - Build/push image: docker build ... + aws ecr ... + docker push
+  - Update ECS task definition to new image tag
+  - aws ecs update-service --force-new-deployment

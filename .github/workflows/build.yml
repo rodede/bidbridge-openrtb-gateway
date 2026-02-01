@@ -1,0 +1,35 @@
+name: build
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'bidbridge-simulator/**'
+      - 'pom.xml'
+      - '.github/workflows/build.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'bidbridge-simulator/**'
+      - 'pom.xml'
+      - '.github/workflows/build.yml'
+
+jobs:
+  build-simulator:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Build simulator
+        run: mvn -pl bidbridge-simulator package
