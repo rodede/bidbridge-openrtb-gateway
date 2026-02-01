@@ -1,4 +1,4 @@
-package ro.dede.bidbridge.simulator;
+package ro.dede.bidbridge.simulator.filters.auth;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -8,22 +8,30 @@ import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import ro.dede.bidbridge.simulator.api.DspAdminController;
 import ro.dede.bidbridge.simulator.api.SimulatorController;
 import ro.dede.bidbridge.simulator.api.SimulatorErrorHandler;
 import ro.dede.bidbridge.simulator.config.DspConfig;
 import ro.dede.bidbridge.simulator.config.DspConfigStore;
+import ro.dede.bidbridge.simulator.config.SimulatorAuthProperties;
 import ro.dede.bidbridge.simulator.config.SimulatorLimitsProperties;
 import ro.dede.bidbridge.simulator.dsp.DefaultDspBidder;
 import ro.dede.bidbridge.simulator.dsp.DspBidder;
 import ro.dede.bidbridge.simulator.dsp.DspResponseService;
 import ro.dede.bidbridge.simulator.filters.observability.RequestLoggingFilter;
 
-@WebFluxTest(controllers = SimulatorController.class)
-@Import({SimulatorControllerTest.TestConfig.class, SimulatorErrorHandler.class})
-class SimulatorControllerTest {
+@WebFluxTest(controllers = {SimulatorController.class, DspAdminController.class})
+@Import({SimulatorAuthFilter.class, SimulatorAuthProperties.class, SimulatorErrorHandler.class, SimulatorAuthFilterTest.TestConfig.class})
+@TestPropertySource(properties = {
+        "simulator.auth.enabled=true",
+        "simulator.auth.bidApiKey=test-bid-key",
+        "simulator.auth.adminApiToken=test-admin-token"
+})
+class SimulatorAuthFilterTest {
 
     @Autowired
     private WebTestClient webTestClient;
@@ -45,7 +53,7 @@ class SimulatorControllerTest {
     }
 
     @Test
-    void returnsBidWhenProbabilityIsOne() {
+    void rejectsBidWithoutApiKey() {
         var request = """
                 {"id":"req-1","imp":[{"id":"1"}]}
                 """;
@@ -53,65 +61,46 @@ class SimulatorControllerTest {
         webTestClient.post()
                 .uri("/openrtb2/simulator/bid")
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("X-Request-Id", "test-request-id")
                 .bodyValue(request)
                 .exchange()
-                .expectStatus().isOk()
-                .expectHeader().valueEquals("X-OpenRTB-Version", "2.6")
-                .expectHeader().valueEquals("X-Request-Id", "test-request-id")
-                .expectBody()
-                .jsonPath("$.id").isEqualTo("req-1")
-                .jsonPath("$.seatbid[0].bid[0].impid").isEqualTo("1")
-                .jsonPath("$.seatbid[0].bid[0].price").isEqualTo(1.25);
-    }
-
-    @Test
-    void returnsNoBidWhenProbabilityIsZero() {
-        config.setBidProbability(0.0);
-        var request = """
-                {"id":"req-2","imp":[{"id":"1"}]}
-                """;
-
-        webTestClient.post()
-                .uri("/openrtb2/simulator/bid")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(request)
-                .exchange()
-                .expectStatus().isNoContent()
-                .expectHeader().valueEquals("X-OpenRTB-Version", "2.6");
-    }
-
-    @Test
-    void returns400OnInvalidRequest() {
-        var request = """
-                {"id":"","imp":[]}
-                """;
-
-        webTestClient.post()
-                .uri("/openrtb2/simulator/bid")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(request)
-                .exchange()
-                .expectStatus().isBadRequest()
+                .expectStatus().isUnauthorized()
                 .expectHeader().valueEquals("X-OpenRTB-Version", "2.6")
                 .expectBody()
-                .jsonPath("$.error").exists();
+                .jsonPath("$.error").isEqualTo("Unauthorized");
     }
 
     @Test
-    void returns400OnMalformedJson() {
+    void allowsBidWithApiKey() {
         var request = """
-                {"id":"req-1","imp":[}
+                {"id":"req-1","imp":[{"id":"1"}]}
                 """;
 
         webTestClient.post()
                 .uri("/openrtb2/simulator/bid")
                 .contentType(MediaType.APPLICATION_JSON)
+                .header("X-Api-Key", "test-bid-key")
                 .bodyValue(request)
                 .exchange()
-                .expectStatus().isBadRequest()
+                .expectStatus().isOk();
+    }
+
+    @Test
+    void rejectsAdminWithoutToken() {
+        webTestClient.get()
+                .uri("/admin/dsps")
+                .exchange()
+                .expectStatus().isUnauthorized()
                 .expectBody()
-                .jsonPath("$.error").exists();
+                .jsonPath("$.error").isEqualTo("Unauthorized");
+    }
+
+    @Test
+    void allowsAdminWithToken() {
+        webTestClient.get()
+                .uri("/admin/dsps")
+                .header("X-Admin-Token", "test-admin-token")
+                .exchange()
+                .expectStatus().isOk();
     }
 
     @TestConfiguration

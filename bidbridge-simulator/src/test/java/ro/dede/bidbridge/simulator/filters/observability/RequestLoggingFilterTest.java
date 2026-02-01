@@ -1,4 +1,4 @@
-package ro.dede.bidbridge.simulator.observability;
+package ro.dede.bidbridge.simulator.filters.observability;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;

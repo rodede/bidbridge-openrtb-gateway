@@ -10,6 +10,8 @@ server:
     response-timeout: 5s
 simulator:
   maxInFlight: 200
+  auth:
+    enabled: false
 management:
   endpoints:
     web:

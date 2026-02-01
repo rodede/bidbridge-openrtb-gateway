@@ -1,4 +1,4 @@
-package ro.dede.bidbridge.simulator.limits;
+package ro.dede.bidbridge.simulator.filters.limits;
 
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
