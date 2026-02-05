@@ -1,0 +1,21 @@
+### Health status
+GET {{host}}:{{port}}/actuator/health
+
+### Get DSPs (Admin)
+GET http://{{host}}:{{port}}/admin/dsps
+X-Admin-Token: {{api-admin-token}}
+
+
+### Bid request
+POST http://{{host}}:{{port}}/openrtb2/simulator/bid
+Content-Type: application/json
+X-Api-Key: {{api-bid-token}}
+
+{
+  "id": "req-1",
+  "imp": [
+    {
+      "id": "1"
+    }
+  ]
+}
