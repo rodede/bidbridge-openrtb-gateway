@@ -6,13 +6,12 @@
     <parent>
         <groupId>ro.dede</groupId>
         <artifactId>bidbridge</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <groupId>ro.dede</groupId>
     <artifactId>bidbridge-loadgen</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
     <name>BidBridge LoadGen</name>
     <description>OpenRTB load generator</description>
 

@@ -3,12 +3,8 @@ name: simulator-deploy
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
-    paths:
-      - 'bidbridge-simulator/**'
-      - 'pom.xml'
-      - '.github/workflows/simulator-deploy.yml'
+    tags:
+      - 'simulator-*'  
 
 jobs:
   build:

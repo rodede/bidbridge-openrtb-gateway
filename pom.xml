@@ -10,7 +10,7 @@
     <!-- Project coordinates -->
     <groupId>ro.dede</groupId>
     <artifactId>bidbridge</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>${revision}</version>
     <packaging>pom</packaging>
 
     <name>BidBridge OpenRTB Gateway</name>
@@ -29,6 +29,7 @@
 
     <!-- Global properties -->
     <properties>
+        <revision>0.0.1</revision>
         <java.version>25</java.version>
         <spring.boot.version>4.0.1</spring.boot.version>
         <aws.sdk.version>2.25.66</aws.sdk.version>
