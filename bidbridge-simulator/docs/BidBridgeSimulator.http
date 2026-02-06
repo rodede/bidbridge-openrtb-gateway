@@ -13,13 +13,15 @@ X-Admin-Token: {{api-admin-token}}
 
 ### Reload DSPs (Admin)
 POST http://{{host}}:{{port}}/admin/reload-dsps
-X-Admin-Token: ${ADMIN_API_TOKEN}
+X-Admin-Token: {{api-admin-token}}
 
 ###
 ### Bid request
 POST http://{{host}}:{{port}}/openrtb2/simulator/bid
 Content-Type: application/json
 X-Api-Key: {{api-bid-token}}
+X-Request-Id: LocalRequestId
+X-Caller: DD local test
 
 {
   "id": "req-1",
