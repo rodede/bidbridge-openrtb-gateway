@@ -49,3 +49,39 @@ jobs:
           docker build -t "${{ steps.meta.outputs.image }}" -f bidbridge-simulator/Dockerfile .
           docker push "${{ steps.meta.outputs.image }}"
           echo "image=${{ steps.meta.outputs.image }}" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    runs-on: [self-hosted, linux, x64]
+    needs: build
+    permissions:
+      contents: read
+    steps:
+      - name: Verify AWS identity from EC2 instance role
+        run: aws sts get-caller-identity
+
+      - name: Resolve digest and restart simulator service
+        env:
+          IMAGE_TAG: ${{ needs.build.outputs.image }}
+        run: |
+          DIGEST=$(aws ecr describe-images \
+            --region eu-north-1 \
+            --repository-name bidbridge-simulator \
+            --image-ids imageTag="${IMAGE_TAG##*:}" \
+            --query 'imageDetails[0].imageDigest' \
+            --output text)
+
+          FULL_IMAGE="721010870513.dkr.ecr.eu-north-1.amazonaws.com/bidbridge-simulator@${DIGEST}"
+
+          sudo mkdir -p /opt/bidbridge-simulator/etc
+          sudo tee /opt/bidbridge-simulator/etc/bidbridge-simulator.env >/dev/null <<EOF
+          IMAGE=${FULL_IMAGE}
+          REGION=eu-north-1
+          CONTAINER_NAME=bidbridge-simulator
+          PORT=8081
+          DSPS_FILE=s3://bidbridge-simulator-config/simulator/dsps.yml
+          EOF
+
+          sudo systemctl daemon-reload
+          sudo systemctl restart bidbridge-simulator
+          sudo systemctl status bidbridge-simulator --no-pager
+          curl -fsS http://127.0.0.1:8081/actuator/health
