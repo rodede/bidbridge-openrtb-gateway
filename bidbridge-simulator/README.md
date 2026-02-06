@@ -2,8 +2,19 @@
 
 Minimal OpenRTB bidder simulator used for local and integration testing.
 
+## Documentation boundaries
+
+This file documents simulator behavior and usage:
+- API endpoints, request/response examples, config semantics, metrics, and local run commands.
+- Keep this file cloud-agnostic. 
+
+AWS account and deployment runbook details live in `AWS_Architecture.md`
+
 ## Purpose
 
+- Support `bidbridge-engine` integration and behavior testing.
+- Act as a controllable fake DSP endpoint for experiments.
+- Stay intentionally simple and low-cost to operate.
 - Accepts OpenRTB `POST /openrtb2/{dsp}/bid`
 - Returns a fixed bid or no-bid based on simple config
 
@@ -15,22 +26,18 @@ From repo root:
 mvn spring-boot:run
 ```
 
-Build Docker image from repo root:
+Run with Docker (from repo root):
 
 ```bash
-docker build -t bidbridge-simulator:local -f bidbridge-simulator/Dockerfile .
-```
-
-Override container port (default 8081):
-
-```bash
-docker run -e SERVER_PORT=8085 -p 8085:8085 <image>
-```
-
-```bash  
 docker build -t bidbridge-simulator:local -f bidbridge-simulator/Dockerfile .
 docker run --rm -p 8081:8081 -v "$PWD/dsps.yml:/simulator/dsps.yml:ro" -e DSPS_FILE=/simulator/dsps.yml bidbridge-simulator:local
 curl -i http://localhost:8081/actuator/info
+```
+
+Override container port (default `8081`):
+
+```bash
+docker run --rm -e SERVER_PORT=8085 -p 8085:8085 bidbridge-simulator:local
 ```
 
 Actuator endpoints:
@@ -47,22 +54,16 @@ The file can either:
 1) use a top-level `dsps:` map, or
 2) place DSP names at the top level.
 
-`dsps.file` supports local paths and `s3://bucket/key` URLs (uses default AWS credentials).
+`dsps.file` supports local paths. Cloud/object-storage configuration is documented in environment-specific runbooks.
 
 Profiles:
 
-- `local` → `application-local.yml` (local file - default)
-- `aws` → `application-aws.yml` (S3 file)
-
-Run with a profile: `SPRING_PROFILES_ACTIVE=local|aws`
+- `local` → `application-local.yml` (default)
 
 ```bash
 SPRING_PROFILES_ACTIVE=local 
 mvn -pl bidbridge-simulator spring-boot:run
 ```
-
-AWS region:
-- Set `AWS_REGION` or `AWS_DEFAULT_REGION` when using an S3 `dsps.file`.
 
 ```yaml
 simulator:
