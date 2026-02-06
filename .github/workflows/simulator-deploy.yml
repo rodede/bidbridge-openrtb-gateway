@@ -83,5 +83,17 @@ jobs:
 
           sudo systemctl daemon-reload
           sudo systemctl restart bidbridge-simulator
-          sudo systemctl status bidbridge-simulator --no-pager
-          curl -fsS http://127.0.0.1:8081/actuator/health
+
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8081/actuator/health >/dev/null; then
+              echo "Simulator is healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "Health check failed after waiting"
+          docker ps -a
+          docker logs bidbridge-simulator --tail=200 || true
+          sudo journalctl -u bidbridge-simulator -n 200 --no-pager || true
+          exit 1
