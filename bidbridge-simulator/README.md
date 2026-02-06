@@ -5,10 +5,10 @@ Minimal OpenRTB bidder simulator used for local and integration testing.
 ## Documentation boundaries
 
 This file documents simulator behavior and usage:
-- API endpoints, request/response examples, config semantics, metrics, and local run commands.
-- Keep this file cloud-agnostic. 
+- API endpoints, config semantics, metrics, and local run commands.
+- Keep this file cloud-agnostic.
 
-AWS account and deployment runbook details live in `AWS_Architecture.md`
+AWS account and deployment runbook details live in `AWS_Architecture.md`.
 
 ## Purpose
 
@@ -23,21 +23,26 @@ AWS account and deployment runbook details live in `AWS_Architecture.md`
 From repo root:
 
 ```bash
-mvn spring-boot:run
+mvn -pl bidbridge-simulator spring-boot:run
 ```
 
-Run with Docker (from repo root):
+1. Run with Docker (from repo root):
 
 ```bash
 docker build -t bidbridge-simulator:local -f bidbridge-simulator/Dockerfile .
-docker run --rm -p 8081:8081 -v "$PWD/dsps.yml:/simulator/dsps.yml:ro" -e DSPS_FILE=/simulator/dsps.yml bidbridge-simulator:local
-curl -i http://localhost:8081/actuator/info
+docker run --rm -p 8081:8081 --name "bidbridge-simulator" -v "$PWD/dsps.yml:/simulator/dsps.yml:ro" -e DSPS_FILE=/simulator/dsps.yml bidbridge-simulator:local
 ```
 
-Override container port (default `8081`):
+2. Override container port (default `8081`):
 
 ```bash
-docker run --rm -e SERVER_PORT=8085 -p 8085:8085 bidbridge-simulator:local
+docker run --rm -p 8085:8085 --name "bidbridge-simulator" -v "$PWD/dsps.yml:/simulator/dsps.yml:ro" -e DSPS_FILE=/simulator/dsps.yml -e SERVER_PORT=8085 bidbridge-simulator:local
+```
+
+3. Remove container and image:
+
+```bash
+docker rm -f bidbridge-simulator && docker rmi bidbridge-simulator:local
 ```
 
 Actuator endpoints:
@@ -50,9 +55,7 @@ Actuator endpoints:
 `bidbridge-simulator/src/main/resources/application.yml` points to an external `dsps.yml`.
 By default it looks for `dsps.yml` at the repo root.
 
-The file can either:
-1) use a top-level `dsps:` map, or
-2) place DSP names at the top level.
+Canonical format: place DSP names at the top level.
 
 `dsps.file` supports local paths. Cloud/object-storage configuration is documented in environment-specific runbooks.
 
@@ -61,7 +64,7 @@ Profiles:
 - `local` → `application-local.yml` (default)
 
 ```bash
-SPRING_PROFILES_ACTIVE=local 
+SPRING_PROFILES_ACTIVE=local
 mvn -pl bidbridge-simulator spring-boot:run
 ```
 
@@ -87,18 +90,6 @@ Config notes:
 
 Polling:
 - `dsps.pollIntervalMs`: reload interval in milliseconds (default 2000).
-
-## Example request
-
-```json
-{"id":"req-1","imp":[{"id":"1"}]}
-```
-
-## Example curl
-
-```bash
-curl -s -H "Content-Type: application/json" -d '{"id":"req-1","imp":[{"id":"1"}]}' http://localhost:8081/openrtb2/simulator/bid
-```
 
 ## Admin endpoints
 
@@ -137,24 +128,3 @@ Emitted metrics:
 - `sim_reload_fail_total`
 - `sim_active_dsps`
 - `sim_rejected_total{reason=in_flight_limit}`
-
-## Example response
-
-```json
-{
-  "id": "req-1",
-  "seatbid": [
-    {
-      "bid": [
-        {
-          "id": "bid-1",
-          "impid": "1",
-          "price": 1.5,
-          "adm": "<vast/>"
-        }
-      ]
-    }
-  ],
-  "cur": "USD"
-}
-```

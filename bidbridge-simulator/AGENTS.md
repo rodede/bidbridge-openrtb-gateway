@@ -10,5 +10,5 @@ Root `AGENTS.md` rules apply here. This file only adds simulator-local guidance.
 
 ## Documentation Boundaries
 
-- `bidbridge-simulator/README.md`: behavior, API, configuration semantics, and local usage.
+- `README.md`: behavior, API, configuration semantics, and local usage.
 - `AWS_Architecture.md`: account-specific infrastructure and deployment runbook.

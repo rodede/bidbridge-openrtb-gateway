@@ -1,4 +1,4 @@
-name: build
+name: simulator-build
 
 on:
   workflow_dispatch:
@@ -6,17 +6,17 @@ on:
     paths:
       - 'bidbridge-simulator/**'
       - 'pom.xml'
-      - '.github/workflows/build.yml'
+      - '.github/workflows/simulator-build.yml'
   push:
     branches:
       - main
     paths:
       - 'bidbridge-simulator/**'
       - 'pom.xml'
-      - '.github/workflows/build.yml'
+      - '.github/workflows/simulator-build.yml'
 
 jobs:
-  build-simulator:
+  simulator-build:
     runs-on: ubuntu-latest
     permissions:
       contents: read

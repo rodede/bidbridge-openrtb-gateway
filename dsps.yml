@@ -2,7 +2,7 @@
 # To add a DSP, add a new block with its config.
 simulator:
   enabled: true
-  bidProbability: 0.5
+  bidProbability: 0.75
   fixedPrice: 100
   currency: "RON"
   admTemplate: "<vast/>"

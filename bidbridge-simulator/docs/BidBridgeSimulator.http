@@ -1,11 +1,21 @@
+### Info
+GET {{host}}:{{port}}/actuator/info
+
 ### Health status
 GET {{host}}:{{port}}/actuator/health
+
+### Prometheus metrics
+GET {{host}}:{{port}}/actuator/prometheus
 
 ### Get DSPs (Admin)
 GET http://{{host}}:{{port}}/admin/dsps
 X-Admin-Token: {{api-admin-token}}
 
+### Reload DSPs (Admin)
+POST http://{{host}}:{{port}}/admin/reload-dsps
+X-Admin-Token: ${ADMIN_API_TOKEN}
 
+###
 ### Bid request
 POST http://{{host}}:{{port}}/openrtb2/simulator/bid
 Content-Type: application/json
