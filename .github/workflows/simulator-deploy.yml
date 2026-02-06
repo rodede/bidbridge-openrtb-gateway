@@ -31,12 +31,21 @@ jobs:
       - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and push simulator image
-        id: build_push
+      - name: Compute image tag from pom version + short SHA
+        id: meta
         env:
           ECR_REPO: 721010870513.dkr.ecr.eu-north-1.amazonaws.com/bidbridge-simulator
-          TAG: ${{ github.sha }}
         run: |
-          docker build -t "$ECR_REPO:$TAG" -f bidbridge-simulator/Dockerfile .
-          docker push "$ECR_REPO:$TAG"
-          echo "image=$ECR_REPO:$TAG" >> "$GITHUB_OUTPUT"
+          VERSION_BASE="$(mvn -q -pl bidbridge-simulator -DforceStdout help:evaluate -Dexpression=project.version)"
+          SHORT_SHA="${GITHUB_SHA::7}"
+          TAG="${VERSION_BASE}-${SHORT_SHA}"
+          IMAGE="${ECR_REPO}:${TAG}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push simulator image
+        id: build_push
+        run: |
+          docker build -t "${{ steps.meta.outputs.image }}" -f bidbridge-simulator/Dockerfile .
+          docker push "${{ steps.meta.outputs.image }}"
+          echo "image=${{ steps.meta.outputs.image }}" >> "$GITHUB_OUTPUT"
