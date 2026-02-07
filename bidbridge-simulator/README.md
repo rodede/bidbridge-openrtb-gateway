@@ -122,9 +122,9 @@ Prometheus endpoint:
 
 Emitted metrics:
 
-- `sim_requests_total{outcome=bid|nobid|error}`
-- `sim_latency_ms`
-- `sim_reload_success_total`
-- `sim_reload_fail_total`
-- `sim_active_dsps`
-- `sim_rejected_total{reason=in_flight_limit}`
+- `sim_requests_total{outcome=bid|nobid|error}` — total request outcomes derived from response status (`200=bid`, `204=nobid`, other statuses=`error`).
+- `sim_latency_ms` — end-to-end request duration timer in milliseconds.
+- `sim_reload_success_total` — cumulative number of successful `dsps.yml` reloads.
+- `sim_reload_fail_total` — cumulative number of failed `dsps.yml` reload attempts.
+- `sim_active_dsps` — gauge with the current number of loaded DSP configurations.
+- `sim_rejected_total{reason=in_flight_limit}` — number of requests rejected with `429` because the in-flight limit was exceeded on `/openrtb2/**`.
