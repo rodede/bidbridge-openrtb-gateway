@@ -51,13 +51,13 @@ class SimulatorControllerTest {
                 """;
 
         webTestClient.post()
-                .uri("/openrtb2/simulator/bid")
+                .uri(OpenRtbConstants.OPENRTB_PREFIX + "simulator/bid")
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("X-Request-Id", "test-request-id")
                 .bodyValue(request)
                 .exchange()
                 .expectStatus().isOk()
-                .expectHeader().valueEquals("X-OpenRTB-Version", "2.6")
+                .expectHeader().valueEquals(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                 .expectHeader().valueEquals("X-Request-Id", "test-request-id")
                 .expectBody()
                 .jsonPath("$.id").isEqualTo("req-1")
@@ -73,12 +73,12 @@ class SimulatorControllerTest {
                 """;
 
         webTestClient.post()
-                .uri("/openrtb2/simulator/bid")
+                .uri(OpenRtbConstants.OPENRTB_PREFIX + "simulator/bid")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .exchange()
                 .expectStatus().isNoContent()
-                .expectHeader().valueEquals("X-OpenRTB-Version", "2.6");
+                .expectHeader().valueEquals(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION);
     }
 
     @Test
@@ -88,12 +88,12 @@ class SimulatorControllerTest {
                 """;
 
         webTestClient.post()
-                .uri("/openrtb2/simulator/bid")
+                .uri(OpenRtbConstants.OPENRTB_PREFIX + "simulator/bid")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .exchange()
                 .expectStatus().isBadRequest()
-                .expectHeader().valueEquals("X-OpenRTB-Version", "2.6")
+                .expectHeader().valueEquals(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                 .expectBody()
                 .jsonPath("$.error").exists();
     }
@@ -105,7 +105,7 @@ class SimulatorControllerTest {
                 """;
 
         webTestClient.post()
-                .uri("/openrtb2/simulator/bid")
+                .uri(OpenRtbConstants.OPENRTB_PREFIX + "simulator/bid")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .exchange()

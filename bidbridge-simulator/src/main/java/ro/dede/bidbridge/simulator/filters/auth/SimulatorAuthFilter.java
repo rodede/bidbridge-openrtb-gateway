@@ -10,6 +10,7 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
+import ro.dede.bidbridge.simulator.OpenRtbConstants;
 import ro.dede.bidbridge.simulator.config.SimulatorAuthProperties;
 import ro.dede.bidbridge.simulator.observability.RequestLogEnricher;
 
@@ -22,11 +23,8 @@ import java.nio.charset.StandardCharsets;
 @Order(Ordered.HIGHEST_PRECEDENCE + 5)
 @ConditionalOnProperty(prefix = "simulator.auth", name = "enabled", havingValue = "true")
 public class SimulatorAuthFilter implements WebFilter {
-    private static final String OPENRTB_VERSION_HEADER = "X-OpenRTB-Version";
-    private static final String OPENRTB_VERSION = "2.6";
     private static final String BID_HEADER = "X-Api-Key";
     private static final String ADMIN_HEADER = "X-Admin-Token";
-    private static final String OPENRTB_PREFIX = "/openrtb2/";
     private static final String ADMIN_PREFIX = "/admin";
     private static final byte[] UNAUTHORIZED_BYTES =
             "{\"error\":\"Unauthorized\"}".getBytes(StandardCharsets.UTF_8);
@@ -58,7 +56,7 @@ public class SimulatorAuthFilter implements WebFilter {
     }
 
     private boolean isOpenRtb(String path) {
-        return path != null && path.startsWith(OPENRTB_PREFIX);
+        return path != null && path.startsWith(OpenRtbConstants.OPENRTB_PREFIX);
     }
 
     private boolean isAdmin(String path) {
@@ -74,7 +72,7 @@ public class SimulatorAuthFilter implements WebFilter {
         var response = exchange.getResponse();
         response.setStatusCode(HttpStatus.UNAUTHORIZED);
         response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
-        response.getHeaders().add(OPENRTB_VERSION_HEADER, OPENRTB_VERSION);
+        response.getHeaders().add(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION);
         var buffer = response.bufferFactory().wrap(UNAUTHORIZED_BYTES);
         return response.writeWith(Mono.just(buffer));
     }

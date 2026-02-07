@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+import ro.dede.bidbridge.simulator.OpenRtbConstants;
 import ro.dede.bidbridge.simulator.dsp.DspResponseService;
 import ro.dede.bidbridge.simulator.model.BidRequest;
 
@@ -24,7 +25,7 @@ public class SimulatorController {
         this.responseService = responseService;
     }
 
-    @PostMapping(path = "/openrtb2/{dsp}/bid")
+    @PostMapping(path = OpenRtbConstants.OPENRTB_PREFIX + "{dsp}/bid")
     public Mono<org.springframework.http.ResponseEntity<?>> bid(@PathVariable(name = "dsp", required = false) String dsp,
                                                                 @RequestBody BidRequest request,
                                                                 ServerWebExchange exchange) {

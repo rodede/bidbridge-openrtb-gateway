@@ -12,6 +12,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import ro.dede.bidbridge.simulator.OpenRtbConstants;
 import ro.dede.bidbridge.simulator.api.DspAdminController;
 import ro.dede.bidbridge.simulator.api.SimulatorController;
 import ro.dede.bidbridge.simulator.api.SimulatorErrorHandler;
@@ -59,12 +60,12 @@ class SimulatorAuthFilterTest {
                 """;
 
         webTestClient.post()
-                .uri("/openrtb2/simulator/bid")
+                .uri(OpenRtbConstants.OPENRTB_PREFIX + "simulator/bid")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .exchange()
                 .expectStatus().isUnauthorized()
-                .expectHeader().valueEquals("X-OpenRTB-Version", "2.6")
+                .expectHeader().valueEquals(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                 .expectBody()
                 .jsonPath("$.error").isEqualTo("Unauthorized");
     }
@@ -76,7 +77,7 @@ class SimulatorAuthFilterTest {
                 """;
 
         webTestClient.post()
-                .uri("/openrtb2/simulator/bid")
+                .uri(OpenRtbConstants.OPENRTB_PREFIX + "simulator/bid")
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("X-Api-Key", "test-bid-key")
                 .bodyValue(request)

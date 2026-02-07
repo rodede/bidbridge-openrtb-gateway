@@ -11,6 +11,7 @@ import org.springframework.web.server.ServerWebInputException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.core.codec.DecodingException;
+import ro.dede.bidbridge.simulator.OpenRtbConstants;
 import ro.dede.bidbridge.simulator.observability.RequestLogEnricher;
 
 /**
@@ -19,8 +20,6 @@ import ro.dede.bidbridge.simulator.observability.RequestLogEnricher;
 @RestControllerAdvice
 public class SimulatorErrorHandler {
     private static final Logger log = LoggerFactory.getLogger(SimulatorErrorHandler.class);
-    private static final String OPENRTB_VERSION_HEADER = "X-OpenRTB-Version";
-    private static final String OPENRTB_VERSION = "2.6";
 
     private final RequestLogEnricher logEnricher = new RequestLogEnricher();
 
@@ -56,13 +55,13 @@ public class SimulatorErrorHandler {
 
     private ResponseEntity<ErrorResponse> error(HttpStatus status, String message) {
         return ResponseEntity.status(status)
-                .header(OPENRTB_VERSION_HEADER, OPENRTB_VERSION)
+                .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                 .body(new ErrorResponse(message));
     }
 
     private ResponseEntity<ErrorResponse> errorStatus(org.springframework.http.HttpStatusCode status, String message) {
         return ResponseEntity.status(status)
-                .header(OPENRTB_VERSION_HEADER, OPENRTB_VERSION)
+                .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                 .body(new ErrorResponse(message));
     }
 

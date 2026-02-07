@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+import ro.dede.bidbridge.simulator.OpenRtbConstants;
 import ro.dede.bidbridge.simulator.api.ErrorResponse;
 import ro.dede.bidbridge.simulator.config.DspConfigStore;
 import ro.dede.bidbridge.simulator.model.BidRequest;
@@ -20,8 +21,6 @@ import java.util.concurrent.ThreadLocalRandom;
 @Component
 public class DspResponseService {
     private static final Logger log = LoggerFactory.getLogger(DspResponseService.class);
-    private static final String OPENRTB_VERSION_HEADER = "X-OpenRTB-Version";
-    private static final String OPENRTB_VERSION = "2.6";
 
     private final DspConfigStore configStore;
     private final DspBidder bidder;
@@ -42,7 +41,7 @@ public class DspResponseService {
             log.debug("Simulator bid response: status=400 error=missing_dsp");
             logEnricher.captureError(exchange, "missing_dsp", "Missing dsp");
             return delayed(ResponseEntity.badRequest()
-                    .header(OPENRTB_VERSION_HEADER, OPENRTB_VERSION)
+                    .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                     .body(new ErrorResponse("Missing dsp")), 0);
         }
         logEnricher.captureDsp(exchange, dspName);
@@ -51,14 +50,14 @@ public class DspResponseService {
             log.debug("Simulator bid response: status=400 error=unknown_dsp dsp={}", dspName);
             logEnricher.captureError(exchange, "unknown_dsp", "Unknown dsp: " + dspName);
             return delayed(ResponseEntity.badRequest()
-                    .header(OPENRTB_VERSION_HEADER, OPENRTB_VERSION)
+                    .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                     .body(new ErrorResponse("Unknown dsp: " + dspName)), 0);
         }
         logEnricher.captureLatency(exchange, config.getResponseDelayMs());
         if (!config.isEnabled()) {
             log.debug("Simulator bid response: status=204 reason=disabled dsp={}", dspName);
             return delayed(ResponseEntity.noContent()
-                    .header(OPENRTB_VERSION_HEADER, OPENRTB_VERSION)
+                    .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                     .build(), config.getResponseDelayMs())
                     .doOnSuccess(response -> logTiming(dspName, config.getResponseDelayMs(), start));
         }
@@ -67,14 +66,14 @@ public class DspResponseService {
             log.debug("Simulator bid response: status=400 error={} dsp={}", validationError, dspName);
             logEnricher.captureError(exchange, "invalid_request", validationError);
             return delayed(ResponseEntity.badRequest()
-                    .header(OPENRTB_VERSION_HEADER, OPENRTB_VERSION)
+                    .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                     .body(new ErrorResponse(validationError)), config.getResponseDelayMs())
                     .doOnSuccess(response -> logTiming(dspName, config.getResponseDelayMs(), start));
         }
         if (ThreadLocalRandom.current().nextDouble() > config.getBidProbability()) {
             log.debug("Simulator bid response: status=204 reason=no-bid dsp={}", dspName);
             return delayed(ResponseEntity.noContent()
-                    .header(OPENRTB_VERSION_HEADER, OPENRTB_VERSION)
+                    .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                     .build(), config.getResponseDelayMs())
                     .doOnSuccess(response -> logTiming(dspName, config.getResponseDelayMs(), start));
         }
@@ -84,7 +83,7 @@ public class DspResponseService {
                     log.debug("Simulator bid response: status=200 dsp={} id={} impid={} price={} cur={}",
                             dspName, response.id(), impId, response.seatbid().getFirst().bid().getFirst().price(), response.cur());
                     return ResponseEntity.ok()
-                            .header(OPENRTB_VERSION_HEADER, OPENRTB_VERSION)
+                            .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                             .body(response);
                 })
                 .flatMap(entity -> delayed(entity, config.getResponseDelayMs()))

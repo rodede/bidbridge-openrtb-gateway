@@ -27,4 +27,4 @@ replay_pid*
 # DD
 .DS_Store
 .idea
-docs/http-client.env.json
+tools/http-client.env.json

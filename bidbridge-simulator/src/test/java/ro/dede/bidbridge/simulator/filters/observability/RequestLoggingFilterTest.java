@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
 import reactor.core.publisher.Mono;
+import ro.dede.bidbridge.simulator.OpenRtbConstants;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -17,7 +18,7 @@ class RequestLoggingFilterTest {
         var registry = new SimpleMeterRegistry();
         var filter = new RequestLoggingFilter(registry);
         var exchange = MockServerWebExchange.from(
-                MockServerHttpRequest.post("/openrtb2/simulator/bid").build()
+                MockServerHttpRequest.post(OpenRtbConstants.OPENRTB_PREFIX + "simulator/bid").build()
         );
 
         filter.filter(exchange, ex -> {

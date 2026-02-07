@@ -9,6 +9,7 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
+import ro.dede.bidbridge.simulator.OpenRtbConstants;
 import ro.dede.bidbridge.simulator.config.SimulatorLimitsProperties;
 import ro.dede.bidbridge.simulator.observability.RequestLogEnricher;
 import io.micrometer.core.instrument.Counter;
@@ -23,8 +24,6 @@ import java.util.concurrent.Semaphore;
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 10)
 public class InFlightLimitFilter implements WebFilter {
-    private static final String OPENRTB_VERSION_HEADER = "X-OpenRTB-Version";
-    private static final String OPENRTB_VERSION = "2.6";
     private static final byte[] TOO_MANY_BYTES =
             "{\"error\":\"Too many requests\"}".getBytes(StandardCharsets.UTF_8);
 
@@ -42,17 +41,25 @@ public class InFlightLimitFilter implements WebFilter {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+        var path = exchange.getRequest().getPath().value();
+        if (!isLimitedPath(path)) {
+            return chain.filter(exchange);
+        }
         if (!semaphore.tryAcquire()) {
             rejectedCounter.increment();
             logEnricher.captureError(exchange, "too_many_requests", "Too many requests");
             var response = exchange.getResponse();
             response.setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
             response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
-            response.getHeaders().add(OPENRTB_VERSION_HEADER, OPENRTB_VERSION);
+            response.getHeaders().add(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION);
             var buffer = response.bufferFactory().wrap(TOO_MANY_BYTES);
             return response.writeWith(Mono.just(buffer));
         }
         return chain.filter(exchange)
                 .doFinally(signal -> semaphore.release());
+    }
+
+    private boolean isLimitedPath(String path) {
+        return path != null && path.startsWith(OpenRtbConstants.OPENRTB_PREFIX);
     }
 }
