@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 import ro.dede.bidbridge.simulator.config.loader.DspConfigLoadResult;
 import ro.dede.bidbridge.simulator.config.loader.LocalYamlDspConfigLoader;
 import ro.dede.bidbridge.simulator.config.loader.S3YamlDspConfigLoader;
@@ -31,9 +30,11 @@ public class FileBackedDspConfigStore implements DspConfigStore {
     private final Counter reloadSuccess;
     private final Counter reloadFail;
 
-    public FileBackedDspConfigStore(DspsFileProperties properties, MeterRegistry meterRegistry) {
+    public FileBackedDspConfigStore(DspsFileProperties properties,
+                                    MeterRegistry meterRegistry,
+                                    S3YamlDspConfigLoader s3Loader) {
         this.properties = properties;
-        this.s3Loader = new S3YamlDspConfigLoader(properties.getAwsRegion());
+        this.s3Loader = s3Loader;
         this.reloadSuccess = Counter.builder("sim_reload_success_total")
                 .description("Total successful DSP config reloads")
                 .register(meterRegistry);
@@ -52,11 +53,6 @@ public class FileBackedDspConfigStore implements DspConfigStore {
         if (!result.success() && state.get().configs.isEmpty()) {
             throw new IllegalStateException("Failed to load dsps configuration on startup: " + result.message());
         }
-    }
-
-    @PreDestroy
-    void close() {
-        s3Loader.close();
     }
 
     @Override
