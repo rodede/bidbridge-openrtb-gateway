@@ -22,7 +22,7 @@ public class DefaultDspBidder implements DspBidder {
         var bidId = "bid-" + request.id();
         var price = config.getFixedPrice() > 0 ? config.getFixedPrice() : 0.01;
         var adm = normalize(config.getAdmTemplate(), "<vast/>");
-        var currency = normalize(config.getCurrency(), "RON");
+        var currency = normalize(config.getCurrency(), "USD");
         var bid = new Bid(bidId, impId, price, adm);
         var response = new BidResponse(
                 request.id(),

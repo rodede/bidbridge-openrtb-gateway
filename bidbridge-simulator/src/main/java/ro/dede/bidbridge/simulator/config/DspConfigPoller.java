@@ -50,6 +50,7 @@ public class DspConfigPoller {
     void stop() {
         running.set(false);
         scheduler.shutdownNow();
+        s3Loader.close();
     }
 
     private void poll() {

@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import ro.dede.bidbridge.simulator.config.loader.DspConfigLoadResult;
 import ro.dede.bidbridge.simulator.config.loader.LocalYamlDspConfigLoader;
 import ro.dede.bidbridge.simulator.config.loader.S3YamlDspConfigLoader;
@@ -51,6 +52,11 @@ public class FileBackedDspConfigStore implements DspConfigStore {
         if (!result.success() && state.get().configs.isEmpty()) {
             throw new IllegalStateException("Failed to load dsps configuration on startup: " + result.message());
         }
+    }
+
+    @PreDestroy
+    void close() {
+        s3Loader.close();
     }
 
     @Override

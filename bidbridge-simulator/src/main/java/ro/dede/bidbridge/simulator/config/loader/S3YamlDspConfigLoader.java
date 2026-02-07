@@ -7,18 +7,24 @@ import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 
 import java.io.InputStream;
 import java.net.URI;
+import java.util.function.Supplier;
 
-public final class S3YamlDspConfigLoader extends AbstractYamlDspConfigLoader {
-    private final String region;
+public final class S3YamlDspConfigLoader extends AbstractYamlDspConfigLoader implements AutoCloseable {
+    private final Supplier<S3Client> s3ClientFactory;
+    private volatile S3Client s3Client;
 
     public S3YamlDspConfigLoader(String region) {
-        this.region = region;
+        this(() -> createS3Client(region));
+    }
+
+    S3YamlDspConfigLoader(Supplier<S3Client> s3ClientFactory) {
+        this.s3ClientFactory = s3ClientFactory;
     }
 
     @Override
     InputStream openStream(String location) {
         var s3Location = parse(location);
-        return s3Client(s3Location.region).getObject(GetObjectRequest.builder()
+        return s3Client().getObject(GetObjectRequest.builder()
                 .bucket(s3Location.bucket)
                 .key(s3Location.key)
                 .build());
@@ -27,7 +33,7 @@ public final class S3YamlDspConfigLoader extends AbstractYamlDspConfigLoader {
     @Override
     public long lastModified(String location) {
         var s3Location = parse(location);
-        var head = s3Client(s3Location.region).headObject(HeadObjectRequest.builder()
+        var head = s3Client().headObject(HeadObjectRequest.builder()
                 .bucket(s3Location.bucket)
                 .key(s3Location.key)
                 .build());
@@ -36,6 +42,9 @@ public final class S3YamlDspConfigLoader extends AbstractYamlDspConfigLoader {
 
     private S3Location parse(String location) {
         var uri = URI.create(location);
+        if (!"s3".equalsIgnoreCase(uri.getScheme())) {
+            throw new IllegalStateException("Invalid s3 location: scheme must be s3");
+        }
         var bucket = uri.getHost();
         var key = uri.getPath();
         if (bucket == null || bucket.isBlank()) {
@@ -45,16 +54,41 @@ public final class S3YamlDspConfigLoader extends AbstractYamlDspConfigLoader {
             throw new IllegalStateException("Invalid s3 location: missing key");
         }
         key = key.startsWith("/") ? key.substring(1) : key;
-        return new S3Location(bucket, key, region);
+        return new S3Location(bucket, key);
     }
 
-    private S3Client s3Client(String region) {
+    S3Client s3Client() {
+        var current = s3Client;
+        if (current != null) {
+            return current;
+        }
+        synchronized (this) {
+            if (s3Client == null) {
+                s3Client = s3ClientFactory.get();
+            }
+            return s3Client;
+        }
+    }
+
+    private static S3Client createS3Client(String region) {
         if (region == null || region.isBlank()) {
             return S3Client.builder().build();
         }
         return S3Client.builder().region(Region.of(region)).build();
     }
 
-    private record S3Location(String bucket, String key, String region) {
+    @Override
+    public void close() {
+        S3Client current;
+        synchronized (this) {
+            current = s3Client;
+            s3Client = null;
+        }
+        if (current != null) {
+            current.close();
+        }
+    }
+
+    private record S3Location(String bucket, String key) {
     }
 }
