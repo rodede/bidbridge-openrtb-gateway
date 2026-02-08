@@ -37,7 +37,7 @@ HTTP stack can be swapped later without changing adapter logic.
 
 - Timeouts → no-bid
 - Invalid response → error (bad bidder response)
-- Network errors → fallback
+- Network/runtime errors → adapter error result (merged at response policy level)
 
 ---
 
@@ -45,6 +45,3 @@ HTTP stack can be swapped later without changing adapter logic.
 
 - SimulatorAdapter
 - SimulatorHttpAdapter
-- StaticBidAdapter
-- ReplayAdapter
-- ExternalDSPAdapter (mocked)

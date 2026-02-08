@@ -45,11 +45,6 @@ docker run --rm -p 8085:8085 --name "bidbridge-simulator" -v "$PWD/dsps.yml:/sim
 docker rm -f bidbridge-simulator && docker rmi bidbridge-simulator:local
 ```
 
-Actuator endpoints:
-
-- `GET /actuator/health`
-- `GET /actuator/prometheus`
-
 ## Configuration
 
 `bidbridge-simulator/src/main/resources/application.yml` points to an external `dsps.yml`.
@@ -116,8 +111,10 @@ Headers:
 
 ## Metrics
 
-Prometheus endpoint:
+Observability endpoints:
 
+- `GET /actuator/health`
+- `GET /actuator/info`
 - `GET /actuator/prometheus`
 
 Emitted metrics:

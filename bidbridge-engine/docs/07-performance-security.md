@@ -2,8 +2,8 @@
 
 ## Performance Targets
 
-- P95 < 20ms
-- P99 < 40ms
+- P95 < 50ms
+- P99 < 80ms
 - Throughput > 5k QPS
 
 ---
@@ -24,6 +24,10 @@
 - Request size limits
 - Input validation
 - Secure secrets storage
+
+MVP note:
+- Input validation is implemented.
+- HTTPS/rate limiting are deployment/edge concerns in the current phase.
 
 ---
 

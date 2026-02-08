@@ -1,7 +1,7 @@
 # Implementation Details (MVP)
 
 This document captures MVP-level internal behavior that goes beyond the public API contract.
-Refer to `docs/02-architecture.md` for component-level context.
+Refer to `bidbridge-engine/docs/01-architecture.md` for component-level context.
 
 ---
 
@@ -125,3 +125,34 @@ rules:
 - If no bid remains, return 204.
 - If all adapters time out, return 503 (overload).
 - If all adapters error, return 503 (adapter failure).
+
+---
+
+## Technical Notes
+
+### Project bootstrap command
+
+```
+spring init \
+  --type=maven-project \
+  --language=java \
+  --boot-version=4.0.1 \
+  --java-version=25 \
+  --groupId=ro.dede \
+  --artifactId=bidbridge-engine \
+  --name="BidBridge Engine" \
+  --package-name=ro.dede.bidbridge.engine \
+  --dependencies=webflux,actuator,validation \
+  bidbridge-engine
+```
+
+### Validation notes
+
+- Validation uses Jakarta Bean Validation (`@Valid`, `@NotBlank`, `@NotNull`, etc.).
+- Cross-field checks can use custom assertions (for example: site/app exclusivity).
+- Keep validation fail-fast and close to API/normalization boundaries.
+
+### Runtime notes
+
+- Simulator currently exposes `/actuator/prometheus`.
+- Engine metrics are present; broader tracing rollout is a later phase.

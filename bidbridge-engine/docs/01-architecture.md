@@ -24,8 +24,9 @@ SSP
 
 ### API Layer
 - Exposes HTTP endpoint
-- Handles authentication and rate limiting
-- Performs initial validation
+- Performs initial schema/shape validation
+- Propagates correlation ID and request timing logs
+- Authentication/rate limiting are handled outside the engine in MVP
 
 ### Normalization Layer
 Normalization must support OpenRTB 2.5 and 2.6.
@@ -33,7 +34,7 @@ The internal model follows 2.6; missing fields default safely.
 - Converts raw OpenRTB into internal model
 - Extracts relevant attributes
 - Preserves extensions
-See `docs/00-implementation-details.md` for normalization rules, defaults, and pass-through behavior.
+See `bidbridge-engine/docs/00-implementation-details.md` for normalization rules, defaults, and pass-through behavior.
 
 ### Rules Engine
 - Applies routing and filtering logic
@@ -41,7 +42,8 @@ See `docs/00-implementation-details.md` for normalization rules, defaults, and p
 
 ### Adapter Layer
 - Encapsulates bidder integrations
-- Manages timeouts and retries
+- Manages timeout budgets and response mapping
+- Retries are not part of MVP behavior
 
 ### Response Merger
 - Collects adapter responses

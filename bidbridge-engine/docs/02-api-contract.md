@@ -32,13 +32,14 @@ Backward compatibility:
 | No-bid     | 204    | Empty            |
 | Bad input  | 400    | Error message    |
 | Overload   | 503    | Error message    |
+| Internal error | 500 | Error message    |
 
 ---
 
 ## Headers
 
-- X-OpenRTB-Version: 2.6
-- Accept-Encoding: gzip
+- X-OpenRTB-Version: 2.6 (response)
+- X-Correlation-Id (optional request header, echoed in response)
 
 ---
 
@@ -53,4 +54,4 @@ Backward compatibility:
 
 ## Error Handling
 
-See `docs/00-implementation-details.md` for error handling behavior, internal normalization rules and defaults.
+See `bidbridge-engine/docs/00-implementation-details.md` for error handling behavior, internal normalization rules and defaults.

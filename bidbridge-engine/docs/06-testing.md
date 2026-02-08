@@ -20,9 +20,9 @@
 
 ## Load Testing
 
-- wrk
-- k6
-- Replay tools
+- `bidbridge-loadgen` module (QPS control + JSON/JSONL replay)
+- wrk / k6 (optional external tooling)
+- Replay files for deterministic request sets
 
 ---
 
