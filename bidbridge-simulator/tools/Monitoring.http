@@ -2,4 +2,4 @@
 GET {{host}}:{{prometheus-port}}/-/healthy
 
 ### Validate monitoring
-GET {{host}}:{{prometheus-port}}/api/v1/targets 
+GET {{host}}:{{prometheus-port}}/api/v1/targets

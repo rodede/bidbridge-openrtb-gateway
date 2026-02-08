@@ -15,6 +15,7 @@ import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
 
+import ro.dede.bidbridge.simulator.OpenRtbConstants;
 import ro.dede.bidbridge.simulator.observability.RequestLogAttributes;
 
 import java.util.UUID;
@@ -87,6 +88,9 @@ public class RequestLoggingFilter implements WebFilter {
 
     private void logSummary(ServerWebExchange exchange) {
         var path = exchange.getRequest().getPath().value();
+        if (!isBusinessPath(path)) {
+            return;
+        }
         var status = exchange.getResponse().getStatusCode();
         var statusValue = status == null ? 0 : status.value();
         var requestId = (String) exchange.getAttribute(REQUEST_ID_ATTR);
@@ -132,6 +136,10 @@ public class RequestLoggingFilter implements WebFilter {
             case 204 -> OUTCOME_NOBID;
             default -> OUTCOME_ERROR;
         };
+    }
+
+    private boolean isBusinessPath(String path) {
+        return path != null && path.startsWith(OpenRtbConstants.OPENRTB_PREFIX);
     }
 
     private MdcScope mdc(String requestId, String caller) {
