@@ -39,7 +39,8 @@ Backward compatibility:
 ## Headers
 
 - X-OpenRTB-Version: 2.6 (response)
-- X-Correlation-Id (optional request header, echoed in response)
+- X-Request-Id (optional request header, echoed in response)
+- X-Caller (optional request header, echoed in response)
 
 ---
 

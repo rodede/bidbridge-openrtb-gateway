@@ -20,6 +20,7 @@ Responsibilities:
 
 HTTP adapters use an internal `HttpBidderClient` abstraction (WebClient-based by default) so the
 HTTP stack can be swapped later without changing adapter logic.
+Engine request context headers (`X-Request-Id`, `X-Caller`) are propagated to outbound bidder calls when present.
 
 ---
 

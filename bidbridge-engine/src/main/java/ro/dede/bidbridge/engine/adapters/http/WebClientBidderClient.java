@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import ro.dede.bidbridge.engine.domain.openrtb.BidResponse;
+import ro.dede.bidbridge.engine.observability.RequestLoggingFilter;
 import ro.dede.bidbridge.engine.service.BadBidderResponseException;
 
 /**
@@ -25,8 +26,18 @@ public class WebClientBidderClient implements HttpBidderClient<BidResponse> {
 
     @Override
     public Mono<HttpBidderResponse<BidResponse>> postJson(String endpoint, Object body) {
-        return webClient.post()
+        return Mono.deferContextual(context -> webClient.post()
                 .uri(endpoint)
+                .headers(headers -> {
+                    var requestId = context.getOrDefault(RequestLoggingFilter.REQUEST_ID_ATTR, null);
+                    if (requestId instanceof String requestIdValue && !requestIdValue.isBlank()) {
+                        headers.set(RequestLoggingFilter.REQUEST_ID_HEADER, requestIdValue);
+                    }
+                    var caller = context.getOrDefault(RequestLoggingFilter.CALLER_ATTR, null);
+                    if (caller instanceof String callerValue && !callerValue.isBlank()) {
+                        headers.set(RequestLoggingFilter.CALLER_HEADER, callerValue);
+                    }
+                })
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .bodyValue(body)
@@ -50,7 +61,7 @@ public class WebClientBidderClient implements HttpBidderClient<BidResponse> {
                                     ex -> new BadBidderResponseException("Invalid bidder response", ex))
                             .map(parsed -> new HttpBidderResponse<>(status, parsed, responseSize))
                             .switchIfEmpty(Mono.just(new HttpBidderResponse<>(status, null, responseSize)));
-                });
+                }));
     }
 
     private BidResponse validateResponse(BidResponse response) {

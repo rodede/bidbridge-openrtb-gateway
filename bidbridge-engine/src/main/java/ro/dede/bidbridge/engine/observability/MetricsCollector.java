@@ -17,16 +17,8 @@ public class MetricsCollector {
         this.registry = registry;
     }
 
-    public void recordRequest(String status) {
-        registry.counter("requests_total", "status", status).increment();
-    }
-
-    public void recordBid() {
-        registry.counter("bids_total").increment();
-    }
-
-    public void recordNoBid() {
-        registry.counter("nobids_total").increment();
+    public void recordRequestOutcome(String outcome) {
+        registry.counter("requests_total", "outcome", outcome).increment();
     }
 
     public void recordError(String type) {
@@ -49,8 +41,9 @@ public class MetricsCollector {
         return Timer.start(registry);
     }
 
-    public void stopRequestTimer(Timer.Sample sample) {
+    public void stopRequestTimer(Timer.Sample sample, String outcome) {
         sample.stop(Timer.builder("request_latency")
+                .tag("outcome", outcome)
                 .publishPercentiles(0.95, 0.99)
                 .publishPercentileHistogram()
                 .minimumExpectedValue(Duration.ofMillis(1))

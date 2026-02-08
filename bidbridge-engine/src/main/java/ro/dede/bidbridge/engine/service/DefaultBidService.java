@@ -62,9 +62,7 @@ public class DefaultBidService implements BidService {
         return Flux.fromIterable(rulesResult.adapters())
                 .flatMap(entry -> executeAdapter(entry, rulesResult.request(), adapterBudgetMs))
                 .collectList()
-                .flatMap(results -> responseMerger.merge(rulesResult.request(), results)
-                        .doOnNext(response -> metrics.recordBid())
-                        .switchIfEmpty(Mono.fromRunnable(metrics::recordNoBid)))
+                .flatMap(results -> responseMerger.merge(rulesResult.request(), results))
                 .timeout(Duration.ofMillis(requestDeadlineMs))
                 .onErrorMap(TimeoutException.class, ex -> new OverloadException("Request timed out"));
     }

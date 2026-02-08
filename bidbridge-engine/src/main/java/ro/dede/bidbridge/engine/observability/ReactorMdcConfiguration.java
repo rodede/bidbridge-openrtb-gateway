@@ -10,12 +10,12 @@ import reactor.util.context.Context;
 import jakarta.annotation.PreDestroy;
 
 /**
- * Propagates correlation ID from Reactor context into MDC for consistent log prefixing.
+ * Propagates request ID from Reactor context into MDC for consistent log prefixing.
  */
 @Component
 public final class ReactorMdcConfiguration {
 
-    private static final String HOOK_KEY = "correlationIdMdc";
+    private static final String HOOK_KEY = "requestIdMdc";
 
     public ReactorMdcConfiguration() {
         Hooks.onEachOperator(HOOK_KEY, Operators.lift((sc, subscriber) -> new MdcSubscriber(subscriber)));
@@ -59,16 +59,16 @@ public final class ReactorMdcConfiguration {
         }
 
         private static void withMdc(Context context, Runnable action) {
-            var previous = MDC.get(RequestLoggingFilter.CORRELATION_ID_ATTR);
-            var correlationId = context.getOrDefault(RequestLoggingFilter.CORRELATION_ID_ATTR, "unknown");
-            MDC.put(RequestLoggingFilter.CORRELATION_ID_ATTR, correlationId);
+            var previous = MDC.get(RequestLoggingFilter.REQUEST_ID_ATTR);
+            var requestId = context.getOrDefault(RequestLoggingFilter.REQUEST_ID_ATTR, "unknown");
+            MDC.put(RequestLoggingFilter.REQUEST_ID_ATTR, requestId);
             try {
                 action.run();
             } finally {
                 if (previous == null) {
-                    MDC.remove(RequestLoggingFilter.CORRELATION_ID_ATTR);
+                    MDC.remove(RequestLoggingFilter.REQUEST_ID_ATTR);
                 } else {
-                    MDC.put(RequestLoggingFilter.CORRELATION_ID_ATTR, previous);
+                    MDC.put(RequestLoggingFilter.REQUEST_ID_ATTR, previous);
                 }
             }
         }

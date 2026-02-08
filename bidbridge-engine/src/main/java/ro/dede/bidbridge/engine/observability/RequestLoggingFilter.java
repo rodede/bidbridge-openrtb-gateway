@@ -11,12 +11,14 @@ import reactor.core.publisher.Mono;
 import java.util.UUID;
 
 /**
- * Adds a correlation ID and logs request/response timing.
+ * Adds a request ID and logs request/response timing.
  */
 @Component
 public class RequestLoggingFilter implements WebFilter {
-    public static final String CORRELATION_ID_HEADER = "X-Correlation-Id";
-    public static final String CORRELATION_ID_ATTR = "correlationId";
+    public static final String REQUEST_ID_HEADER = "X-Request-Id";
+    public static final String CALLER_HEADER = "X-Caller";
+    public static final String REQUEST_ID_ATTR = "requestId";
+    public static final String CALLER_ATTR = "caller";
 
     private static final Logger log = LoggerFactory.getLogger(RequestLoggingFilter.class);
     private final MetricsCollector metrics;
@@ -27,26 +29,50 @@ public class RequestLoggingFilter implements WebFilter {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-        var incomingId = exchange.getRequest().getHeaders().getFirst(CORRELATION_ID_HEADER);
-        var correlationId = (incomingId == null || incomingId.isBlank())
+        var incomingId = exchange.getRequest().getHeaders().getFirst(REQUEST_ID_HEADER);
+        var requestId = (incomingId == null || incomingId.isBlank())
                 ? UUID.randomUUID().toString()
                 : incomingId;
-        exchange.getAttributes().put(CORRELATION_ID_ATTR, correlationId);
-        exchange.getResponse().getHeaders().add(CORRELATION_ID_HEADER, correlationId);
+        exchange.getAttributes().put(REQUEST_ID_ATTR, requestId);
+        exchange.getResponse().getHeaders().add(REQUEST_ID_HEADER, requestId);
+        var caller = exchange.getRequest().getHeaders().getFirst(CALLER_HEADER);
+        if (caller != null && !caller.isBlank()) {
+            exchange.getAttributes().put(CALLER_ATTR, caller);
+            exchange.getResponse().getHeaders().add(CALLER_HEADER, caller);
+        }
 
         var timer = metrics.startRequestTimer();
         var start = System.nanoTime();
         return chain.filter(exchange)
-                .contextWrite(context -> context.put(CORRELATION_ID_ATTR, correlationId))
+                .contextWrite(context -> {
+                    var updated = context.put(REQUEST_ID_ATTR, requestId);
+                    if (caller != null && !caller.isBlank()) {
+                        updated = updated.put(CALLER_ATTR, caller);
+                    }
+                    return updated;
+                })
                 .doFinally(signalType -> {
                     var durationMs = (System.nanoTime() - start) / 1_000_000L;
                     var status = exchange.getResponse().getStatusCode();
-                    metrics.recordRequest(status == null ? "unknown" : String.valueOf(status.value()));
-                    metrics.stopRequestTimer(timer);
-                    log.info("request completed path={} status={} durationMs={}",
+                    var statusValue = status == null ? 0 : status.value();
+                    var outcome = outcomeForStatus(statusValue);
+                    var callerValue = (String) exchange.getAttribute(CALLER_ATTR);
+                    metrics.recordRequestOutcome(outcome);
+                    metrics.stopRequestTimer(timer, outcome);
+                    log.info("request completed path={} status={} caller={} durationMs={}",
                             exchange.getRequest().getPath().value(),
                             status == null ? "unknown" : status.value(),
+                            callerValue == null ? "" : callerValue,
                             durationMs);
                 });
+    }
+
+    private String outcomeForStatus(int status) {
+        return switch (status) {
+            case 200 -> "bid";
+            case 204 -> "nobid";
+            case 0 -> "unknown";
+            default -> "error";
+        };
     }
 }

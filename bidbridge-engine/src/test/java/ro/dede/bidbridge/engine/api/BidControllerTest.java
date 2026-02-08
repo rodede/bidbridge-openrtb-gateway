@@ -191,6 +191,26 @@ class BidControllerTest {
         assertEquals("ssp", captured.ext().get("source"));
     }
 
+    @Test
+    void echoesRequestIdAndCallerHeaders() {
+        var request = new BidRequest("req-1", List.of(new Imp("1", null, null, null, null, null, null)),
+                new ro.dede.bidbridge.engine.domain.openrtb.Site(null), null, null, null, null, null, null);
+
+        bidRequestNormalizer.setNext(Mono.just(sampleNormalizedRequest()));
+        bidService.setNext(Mono.empty());
+
+        webTestClient.post()
+                .uri("/openrtb2/bid")
+                .header("X-Request-Id", "request-123")
+                .header("X-Caller", "loadgen-test")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isNoContent()
+                .expectHeader().valueEquals("X-Request-Id", "request-123")
+                .expectHeader().valueEquals("X-Caller", "loadgen-test");
+    }
+
     private NormalizedBidRequest sampleNormalizedRequest() {
         return new NormalizedBidRequest(
                 "req-1",

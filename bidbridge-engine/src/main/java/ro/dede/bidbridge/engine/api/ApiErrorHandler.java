@@ -85,7 +85,6 @@ public class ApiErrorHandler {
 
     @ExceptionHandler(FilteredRequestException.class)
     public ResponseEntity<Void> handleFilteredRequest(FilteredRequestException ex) {
-        metrics.recordNoBid();
         return ResponseEntity.noContent()
                 .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                 .build();
