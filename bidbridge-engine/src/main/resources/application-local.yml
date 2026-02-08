@@ -1,0 +1,26 @@
+engine:
+  auth:
+    enabled: false
+  limits:
+    maxInFlight: 200
+
+adapters:
+  configs:
+    simulator:
+      enabled: true
+      timeoutMs: 80
+      bidProbability: 1.0
+      fixedPrice: 0.5
+      admTemplate: "<vast/>"
+    simulatorHttp:
+      enabled: true
+      endpoint: "http://localhost:8081/openrtb2/simulator/bid"
+      timeoutMs: 60000
+
+rules:
+  allowInventory: [ SITE ]
+  minBidfloor: 0.5
+  allowAdapters: [ simulator, simulatorHttp ]
+
+bid:
+  globalTimeoutMs: 0

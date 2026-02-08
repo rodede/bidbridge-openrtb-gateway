@@ -20,14 +20,14 @@
 ## Security
 
 - HTTPS only
-- Rate limiting
+- In-flight request limiting (`engine.limits.maxInFlight` -> HTTP `429` on `/openrtb2/**`)
 - Request size limits
 - Input validation
 - Secure secrets storage
 
 MVP note:
 - Input validation is implemented.
-- HTTPS/rate limiting are deployment/edge concerns in the current phase.
+- In-flight limiting is implemented in the engine; broader rate limiting and HTTPS termination remain deployment/edge concerns.
 
 ---
 

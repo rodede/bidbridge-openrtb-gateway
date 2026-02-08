@@ -9,6 +9,7 @@
 - `adapter_timeouts` (`adapter`)
 - `adapter_bad_response` (`adapter`)
 - `adapter_errors` (`adapter`)
+- `engine_rejected_total` (`reason` = `in_flight_limit`) increments when `/openrtb2/**` is rejected with `429`
 - `request_latency` (`outcome`; timer with p95/p99)
 
 ---

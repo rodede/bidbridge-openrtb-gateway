@@ -16,6 +16,7 @@ import ro.dede.bidbridge.engine.normalization.BidRequestNormalizer;
 import ro.dede.bidbridge.engine.normalization.InvalidRequestException;
 import ro.dede.bidbridge.engine.service.BidService;
 import ro.dede.bidbridge.engine.service.OverloadException;
+import ro.dede.bidbridge.engine.config.EngineLimitsProperties;
 
 import java.util.List;
 import java.util.Map;
@@ -247,6 +248,13 @@ class BidControllerTest {
         ro.dede.bidbridge.engine.observability.MetricsCollector metricsCollector(
                 io.micrometer.core.instrument.MeterRegistry registry) {
             return new ro.dede.bidbridge.engine.observability.MetricsCollector(registry);
+        }
+
+        @Bean
+        EngineLimitsProperties engineLimitsProperties() {
+            var properties = new EngineLimitsProperties();
+            properties.setMaxInFlight(1_000);
+            return properties;
         }
 
     }

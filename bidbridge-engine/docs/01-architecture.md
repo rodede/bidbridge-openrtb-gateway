@@ -26,7 +26,8 @@ SSP
 - Exposes HTTP endpoint
 - Performs initial schema/shape validation
 - Propagates correlation ID and request timing logs
-- Authentication/rate limiting are handled outside the engine in MVP
+- Applies optional inbound API key auth (profile-based)
+- Applies in-flight request limiting on `/openrtb2/**`
 
 ### Normalization Layer
 Normalization must support OpenRTB 2.5 and 2.6.

@@ -1,6 +1,8 @@
 spring:
   application:
     name: BidBridge Engine
+  profiles:
+    default: local
   codec:
     max-in-memory-size: 2MB
 server:
@@ -13,31 +15,10 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
 logging:
   level:
     root: INFO
     ro.dede.bidbridge.engine: INFO
   pattern:
     console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level %logger{36} [%X{requestId:-system}] [%X{caller:-unknown}] - %msg%n"
-
-adapters:
-  configs:
-    simulator:
-      enabled: true
-      timeoutMs: 80
-      bidProbability: 1.0
-      fixedPrice: 0.5
-      admTemplate: "<vast/>"
-    simulatorHttp:
-      enabled: true
-      endpoint: "http://localhost:8081/openrtb2/simulator/bid"
-      timeoutMs: 60000
-
-rules:
-  allowInventory: [ SITE ]
-  minBidfloor: 0.5
-  allowAdapters: [ simulator, simulatorHttp ]
-
-bid:
-  globalTimeoutMs: 0

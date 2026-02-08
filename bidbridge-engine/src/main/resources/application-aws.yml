@@ -1,0 +1,26 @@
+server:
+  port: 8080
+
+engine:
+  auth:
+    enabled: true
+    bidApiKey: "${BID_API_KEY:}"
+  limits:
+    maxInFlight: ${ENGINE_MAX_IN_FLIGHT:200}
+
+adapters:
+  configs:
+    simulator:
+      enabled: false
+    simulatorHttp:
+      enabled: true
+      endpoint: "${SIMULATOR_HTTP_ENDPOINT:http://localhost:8081/openrtb2/simulator/bid}"
+      timeoutMs: ${SIMULATOR_HTTP_TIMEOUT_MS:60000}
+
+rules:
+  allowInventory: [ SITE ]
+  minBidfloor: 0.5
+  allowAdapters: [ simulatorHttp ]
+
+bid:
+  globalTimeoutMs: ${BID_GLOBAL_TIMEOUT_MS:0}

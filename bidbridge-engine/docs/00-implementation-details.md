@@ -15,6 +15,24 @@ Refer to `bidbridge-engine/docs/01-architecture.md` for component-level context.
 
 ---
 
+## WebFilter Order (MVP)
+
+Current filter execution order for inbound HTTP requests:
+
+1. `EngineAuthFilter` (`@Order(Ordered.HIGHEST_PRECEDENCE + 5)`)
+   - Active only on `aws` profile when `engine.auth.enabled=true`
+   - Applies to `/openrtb2/**`
+   - Rejects with `401` on missing/invalid `X-Api-Key`
+2. `InFlightLimitFilter` (`@Order(Ordered.HIGHEST_PRECEDENCE + 10)`)
+   - Applies to `/openrtb2/**`
+   - Rejects with `429` when `engine.limits.maxInFlight` is exceeded
+   - Increments `engine_rejected_total{reason="in_flight_limit"}`
+3. `RequestLoggingFilter` (no explicit `@Order`)
+   - Uses default Spring ordering (runs after explicitly ordered filters)
+   - Adds/echoes `X-Request-Id`, echoes `X-Caller`, records request metrics/logs
+
+---
+
 ## Normalization
 
 The gateway normalizes incoming OpenRTB requests into a 2.6-first internal model.

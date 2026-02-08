@@ -31,6 +31,7 @@ Backward compatibility:
 | Bid        | 200    | BidResponse JSON |
 | No-bid     | 204    | Empty            |
 | Bad input  | 400    | Error message    |
+| Rate limited | 429  | Error message    |
 | Overload   | 503    | Error message    |
 | Internal error | 500 | Error message    |
 
@@ -41,6 +42,11 @@ Backward compatibility:
 - X-OpenRTB-Version: 2.6 (response)
 - X-Request-Id (optional request header, echoed in response)
 - X-Caller (optional request header, echoed in response)
+- X-Api-Key (required only when auth is enabled, e.g. AWS profile)
+
+Rate-limit behavior:
+- `429` is returned when `engine.limits.maxInFlight` is exceeded.
+- Error payload: `{"error":"Too many requests"}`.
 
 ---
 
