@@ -59,16 +59,26 @@ public final class ReactorMdcConfiguration {
         }
 
         private static void withMdc(Context context, Runnable action) {
-            var previous = MDC.get(RequestLoggingFilter.REQUEST_ID_ATTR);
+            var previousRequestId = MDC.get(RequestLoggingFilter.REQUEST_ID_ATTR);
+            var previousCaller = MDC.get(RequestLoggingFilter.CALLER_ATTR);
             var requestId = context.getOrDefault(RequestLoggingFilter.REQUEST_ID_ATTR, "unknown");
             MDC.put(RequestLoggingFilter.REQUEST_ID_ATTR, requestId);
+            var caller = context.getOrDefault(RequestLoggingFilter.CALLER_ATTR, null);
+            if (caller instanceof String callerValue && !callerValue.isBlank()) {
+                MDC.put(RequestLoggingFilter.CALLER_ATTR, callerValue);
+            }
             try {
                 action.run();
             } finally {
-                if (previous == null) {
+                if (previousRequestId == null) {
                     MDC.remove(RequestLoggingFilter.REQUEST_ID_ATTR);
                 } else {
-                    MDC.put(RequestLoggingFilter.REQUEST_ID_ATTR, previous);
+                    MDC.put(RequestLoggingFilter.REQUEST_ID_ATTR, previousRequestId);
+                }
+                if (previousCaller == null) {
+                    MDC.remove(RequestLoggingFilter.CALLER_ATTR);
+                } else {
+                    MDC.put(RequestLoggingFilter.CALLER_ATTR, previousCaller);
                 }
             }
         }

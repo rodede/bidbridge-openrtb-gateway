@@ -19,7 +19,7 @@ logging:
     root: INFO
     ro.dede.bidbridge.engine: INFO
   pattern:
-    console: "%X{requestId:-system} - %d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level %logger{36} - %msg%n"
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level %logger{36} [%X{requestId:-system}] [%X{caller:-unknown}] - %msg%n"
 
 adapters:
   configs:

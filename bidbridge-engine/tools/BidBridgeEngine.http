@@ -1,0 +1,38 @@
+### Info
+GET {{host}}:{{port}}/actuator/info
+
+### Health status
+GET {{host}}:{{port}}/actuator/health
+
+###
+### Bid request (valid)
+POST http://{{host}}:{{port}}/openrtb2/bid
+Content-Type: application/json
+X-Request-Id: AAAA
+X-Caller: {{caller}}
+
+{
+  "id": "req-1",
+  "imp": [
+    {
+      "id": "1",
+      "banner": {},
+      "bidfloor": 0.5
+    }
+  ],
+  "site": {},
+  "tmax": 120
+}
+
+###
+### Bid request (invalid: empty imp list)
+POST http://{{host}}:{{port}}/openrtb2/bid
+Content-Type: application/json
+X-Request-Id: EngineInvalidRequestId
+X-Caller: {{caller}}
+
+{
+  "id": "req-invalid",
+  "imp": [],
+  "site": {}
+}

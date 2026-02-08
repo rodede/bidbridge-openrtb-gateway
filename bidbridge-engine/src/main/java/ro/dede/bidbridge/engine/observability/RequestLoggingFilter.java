@@ -2,6 +2,7 @@ package ro.dede.bidbridge.engine.observability;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
@@ -51,19 +52,49 @@ public class RequestLoggingFilter implements WebFilter {
                     }
                     return updated;
                 })
-                .doFinally(signalType -> {
+                .doOnEach(signal -> {
+                    if (!signal.isOnComplete() && !signal.isOnError()) {
+                        return;
+                    }
+                    var path = exchange.getRequest().getPath().value();
+                    if (path != null && path.startsWith("/actuator")) {
+                        return;
+                    }
                     var durationMs = (System.nanoTime() - start) / 1_000_000L;
+                    var status = exchange.getResponse().getStatusCode();
+                    var requestIdValue = (String) exchange.getAttribute(REQUEST_ID_ATTR);
+                    var callerValue = normalizeCaller((String) exchange.getAttribute(CALLER_ATTR));
+                    var previousRequestId = MDC.get(REQUEST_ID_ATTR);
+                    var previousCaller = MDC.get(CALLER_ATTR);
+                    try {
+                        if (requestIdValue != null && !requestIdValue.isBlank()) {
+                            MDC.put(REQUEST_ID_ATTR, requestIdValue);
+                        }
+                        MDC.put(CALLER_ATTR, callerValue);
+                        log.info("request completed path={} status={} caller={} durationMs={}",
+                                path,
+                                status == null ? "unknown" : status.value(),
+                                callerValue,
+                                durationMs);
+                    } finally {
+                        if (previousRequestId == null) {
+                            MDC.remove(REQUEST_ID_ATTR);
+                        } else {
+                            MDC.put(REQUEST_ID_ATTR, previousRequestId);
+                        }
+                        if (previousCaller == null) {
+                            MDC.remove(CALLER_ATTR);
+                        } else {
+                            MDC.put(CALLER_ATTR, previousCaller);
+                        }
+                    }
+                })
+                .doFinally(signalType -> {
                     var status = exchange.getResponse().getStatusCode();
                     var statusValue = status == null ? 0 : status.value();
                     var outcome = outcomeForStatus(statusValue);
-                    var callerValue = (String) exchange.getAttribute(CALLER_ATTR);
                     metrics.recordRequestOutcome(outcome);
                     metrics.stopRequestTimer(timer, outcome);
-                    log.info("request completed path={} status={} caller={} durationMs={}",
-                            exchange.getRequest().getPath().value(),
-                            status == null ? "unknown" : status.value(),
-                            callerValue == null ? "" : callerValue,
-                            durationMs);
                 });
     }
 
@@ -74,5 +105,12 @@ public class RequestLoggingFilter implements WebFilter {
             case 0 -> "unknown";
             default -> "error";
         };
+    }
+
+    private String normalizeCaller(String caller) {
+        if (caller == null || caller.isBlank()) {
+            return "unknown";
+        }
+        return caller;
     }
 }
