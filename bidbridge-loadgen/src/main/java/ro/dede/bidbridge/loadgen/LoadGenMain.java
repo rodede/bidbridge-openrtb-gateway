@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
@@ -25,6 +26,9 @@ import java.util.concurrent.atomic.LongAdder;
  * Supports fixed QPS sending with optional replay from a JSONL file.
  */
 public final class LoadGenMain {
+    private static final String BID_API_KEY_HEADER = "X-Api-Key";
+    private static final String CALLER_HEADER = "X-Caller";
+
     public static void main(String[] args) throws Exception {
         var config = LoadGenConfig.parse(args);
         var payloads = config.replayFile == null
@@ -75,6 +79,14 @@ public final class LoadGenMain {
                     var payload = nextPayload(payloads, payloadIndex);
                     return client.post()
                             .uri(config.url)
+                            .headers(httpHeaders -> {
+                                if (config.bidApiKey != null) {
+                                    httpHeaders.set(BID_API_KEY_HEADER, config.bidApiKey);
+                                }
+                                if (config.xCaller != null) {
+                                    httpHeaders.set(CALLER_HEADER, config.xCaller);
+                                }
+                            })
                             .contentType(MediaType.APPLICATION_JSON)
                             .accept(MediaType.APPLICATION_JSON)
                             .bodyValue(payload)
@@ -119,6 +131,8 @@ public final class LoadGenMain {
         private final int durationSeconds;
         private final int concurrency;
         private final int timeoutMs;
+        private final String bidApiKey;
+        private final String xCaller;
 
         private LoadGenConfig(String url,
                               String requestFile,
@@ -126,7 +140,9 @@ public final class LoadGenMain {
                               int qps,
                               int durationSeconds,
                               int concurrency,
-                              int timeoutMs) {
+                              int timeoutMs,
+                              String bidApiKey,
+                              String xCaller) {
             this.url = url;
             this.requestFile = requestFile;
             this.replayFile = replayFile;
@@ -134,6 +150,8 @@ public final class LoadGenMain {
             this.durationSeconds = durationSeconds;
             this.concurrency = concurrency;
             this.timeoutMs = timeoutMs;
+            this.bidApiKey = bidApiKey;
+            this.xCaller = xCaller;
         }
 
         static LoadGenConfig parse(String[] args) {
@@ -148,10 +166,12 @@ public final class LoadGenMain {
             var durationSeconds = intValue(args, "--duration-seconds", 10);
             var concurrency = intValue(args, "--concurrency", Math.max(1, qps));
             var timeoutMs = intValue(args, "--timeout-ms", 500);
+            var bidApiKey = value(args, "--bid-api-key");
+            var xCaller = value(args, "--x-caller");
             if (qps <= 0 || durationSeconds <= 0 || concurrency <= 0 || timeoutMs <= 0) {
                 usageAndExit();
             }
-            return new LoadGenConfig(url, requestFile, replayFile, qps, durationSeconds, concurrency, timeoutMs);
+            return new LoadGenConfig(url, requestFile, replayFile, qps, durationSeconds, concurrency, timeoutMs, bidApiKey, xCaller);
         }
 
         private static String value(String[] args, String key) {
@@ -182,6 +202,8 @@ public final class LoadGenMain {
                       --duration-seconds <int>  (default: 10)
                       --concurrency <int>       (default: qps)
                       --timeout-ms <int>        (default: 500)
+                      --bid-api-key <value>     (header X-Api-Key, fallback env BID_API_KEY)
+                      --x-caller <value>        (header X-Caller, fallback env X_CALLER)
                     """);
             System.exit(1);
         }

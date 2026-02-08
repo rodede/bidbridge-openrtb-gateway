@@ -15,7 +15,7 @@ From repo root:
 ```bash
 mvn -pl bidbridge-loadgen -DskipTests exec:java \
   -Dexec.mainClass=ro.dede.bidbridge.loadgen.LoadGenMain \
-  -Dexec.args="--url http://localhost:8080/openrtb2/bid --request-file /path/to/request.json --qps 200 --duration-seconds 15 --concurrency 200"
+  -Dexec.args="--url http://localhost:8080/openrtb2/bid --request-file /path/to/request.json --qps 200 --duration-seconds 15 --concurrency 200 --bid-api-key local-secret --x-caller loadgen-local"
 ```
 
 What this run does: sends the request file to the given URL at ~200 QPS for 15 seconds, with up to 200 concurrent in-flight requests.
@@ -42,3 +42,15 @@ Sample files:
 - `--duration-seconds` (default: 10)
 - `--concurrency` (default: qps)
 - `--timeout-ms` (default: 500)
+- `--bid-api-key` (optional, sends `X-Api-Key`; fallback env `BID_API_KEY`)
+- `--x-caller` (optional, sends `X-Caller`; fallback env `X_CALLER`)
+
+Env-based auth/caller example:
+
+```bash
+export BID_API_KEY=local-secret
+export X_CALLER=loadgen-local
+mvn -pl bidbridge-loadgen -DskipTests exec:java \
+  -Dexec.mainClass=ro.dede.bidbridge.loadgen.LoadGenMain \
+  -Dexec.args="--url http://localhost:8080/openrtb2/bid --request-file /path/to/request.json --qps 200 --duration-seconds 15 --concurrency 200"
+```
