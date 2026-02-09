@@ -52,7 +52,10 @@ public class DefaultBidService implements BidService {
 
         var requestDeadlineMs = resolveDeadlineMs(request);
         if (requestDeadlineMs <= 0) {
-            return Mono.error(new OverloadException("Request timed out"));
+            return Mono.error(new OverloadException(
+                    "Request timed out",
+                    OverloadException.Reason.REQUEST_DEADLINE_TIMEOUT
+            ));
         }
 
         // Keep some budget for merge/response building.
@@ -64,7 +67,10 @@ public class DefaultBidService implements BidService {
                 .collectList()
                 .flatMap(results -> responseMerger.merge(rulesResult.request(), results))
                 .timeout(Duration.ofMillis(requestDeadlineMs))
-                .onErrorMap(TimeoutException.class, ex -> new OverloadException("Request timed out"));
+                .onErrorMap(TimeoutException.class, ex -> new OverloadException(
+                        "Request timed out",
+                        OverloadException.Reason.REQUEST_DEADLINE_TIMEOUT
+                ));
     }
 
     /**

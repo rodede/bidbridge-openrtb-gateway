@@ -32,7 +32,7 @@ Backward compatibility:
 | No-bid     | 204    | Empty            |
 | Bad input  | 400    | Error message    |
 | Rate limited | 429  | Error message    |
-| Overload   | 503    | Error message    |
+| Configuration failure | 503 | Error message |
 | Internal error | 500 | Error message    |
 
 ---
@@ -47,6 +47,11 @@ Backward compatibility:
 Rate-limit behavior:
 - `429` is returned when `engine.limits.maxInFlight` is exceeded.
 - Error payload: `{"error":"Too many requests"}`.
+
+No-bid behavior:
+- `204` is used for regular no-fill, timeout no-bid, rules-filtered no-bid, and all-adapters-error no-bid.
+- Timeout no-bid is split internally into deadline timeout vs all-adapters-timeout outcomes.
+- Distinction is internal-only via logs/metrics (see observability docs).
 
 ---
 

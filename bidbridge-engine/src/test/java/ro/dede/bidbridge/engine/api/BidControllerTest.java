@@ -102,7 +102,7 @@ class BidControllerTest {
     }
 
     @Test
-    void returns503OnOverload() {
+    void returns204OnTimeoutNoBid() {
         var request = new BidRequest("req-1", List.of(new Imp("1", null, null, null, null, null, null)),
                 new ro.dede.bidbridge.engine.domain.openrtb.Site(null), null, null, null, null, null, null);
 
@@ -114,10 +114,8 @@ class BidControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .exchange()
-                .expectStatus().isEqualTo(503)
-                .expectHeader().valueEquals("X-OpenRTB-Version", "2.6")
-                .expectBody()
-                .jsonPath("$.error").isEqualTo("overload");
+                .expectStatus().isNoContent()
+                .expectHeader().valueEquals("X-OpenRTB-Version", "2.6");
     }
 
     @Test

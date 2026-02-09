@@ -5,9 +5,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.support.WebExchangeBindException;
+import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.ServerWebInputException;
 import ro.dede.bidbridge.engine.normalization.InvalidRequestException;
 import ro.dede.bidbridge.engine.observability.MetricsCollector;
+import ro.dede.bidbridge.engine.observability.RequestOutcomes;
 import ro.dede.bidbridge.engine.service.AdapterFailureException;
 import ro.dede.bidbridge.engine.service.ConfigurationException;
 import ro.dede.bidbridge.engine.service.FilteredRequestException;
@@ -62,29 +64,30 @@ public class ApiErrorHandler {
     }
 
     @ExceptionHandler(OverloadException.class)
-    public ResponseEntity<ErrorResponse> handleOverload(OverloadException ex) {
-        var message = ex.getMessage() == null || ex.getMessage().isBlank()
-                ? "Overloaded"
-                : ex.getMessage();
-        metrics.recordError("overload");
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+    public ResponseEntity<Void> handleOverload(OverloadException ex, ServerWebExchange exchange) {
+        var outcome = switch (ex.reason()) {
+            case REQUEST_DEADLINE_TIMEOUT -> RequestOutcomes.NO_BID_TIMEOUT_DEADLINE;
+            case ALL_ADAPTERS_TIMED_OUT -> RequestOutcomes.NO_BID_TIMEOUT_ADAPTERS;
+            case UNKNOWN -> RequestOutcomes.NO_BID_TIMEOUT_DEADLINE;
+        };
+        exchange.getAttributes().put(RequestOutcomes.REQUEST_OUTCOME, outcome);
+        return ResponseEntity.noContent()
                 .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
-                .body(new ErrorResponse(message));
+                .build();
     }
 
     @ExceptionHandler(AdapterFailureException.class)
-    public ResponseEntity<ErrorResponse> handleAdapterFailure(AdapterFailureException ex) {
-        var message = ex.getMessage() == null || ex.getMessage().isBlank()
-                ? "Adapter failure"
-                : ex.getMessage();
+    public ResponseEntity<Void> handleAdapterFailure(AdapterFailureException ex, ServerWebExchange exchange) {
         metrics.recordError("adapter_failure");
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+        exchange.getAttributes().put(RequestOutcomes.REQUEST_OUTCOME, RequestOutcomes.NO_BID_ADAPTER_FAILURE);
+        return ResponseEntity.noContent()
                 .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
-                .body(new ErrorResponse(message));
+                .build();
     }
 
     @ExceptionHandler(FilteredRequestException.class)
-    public ResponseEntity<Void> handleFilteredRequest(FilteredRequestException ex) {
+    public ResponseEntity<Void> handleFilteredRequest(ServerWebExchange exchange) {
+        exchange.getAttributes().put(RequestOutcomes.REQUEST_OUTCOME, RequestOutcomes.NO_BID_FILTERED);
         return ResponseEntity.noContent()
                 .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                 .build();

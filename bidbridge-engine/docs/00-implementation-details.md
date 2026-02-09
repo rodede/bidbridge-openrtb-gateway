@@ -9,9 +9,15 @@ Refer to `bidbridge-engine/docs/01-architecture.md` for component-level context.
 
 - Parsing errors → 400
 - Validation errors → 400
-- Internal timeout → 204 or 503
-- Rules-filtered request → 204
+- Request deadline timeout → 204 (`nobid_timeout_deadline`)
+- Rules-filtered request → 204 (`nobid_filtered`)
+- All adapters timed out → 204 (`nobid_timeout_adapters`)
+- All adapters errored (with no successful/no-bid result) → 204 (`nobid_adapter_failure`)
 - Error responses return a JSON body: `{ "error": "<message>" }`
+
+- no bid -> 204 (`nobid_no_fill`)
+
+- Public HTTP contract remains in `bidbridge-engine/docs/02-api-contract.md`.
 
 ---
 
@@ -20,16 +26,16 @@ Refer to `bidbridge-engine/docs/01-architecture.md` for component-level context.
 Current filter execution order for inbound HTTP requests:
 
 1. `EngineAuthFilter` (`@Order(Ordered.HIGHEST_PRECEDENCE + 5)`)
-   - Active only on `aws` profile when `engine.auth.enabled=true`
-   - Applies to `/openrtb2/**`
-   - Rejects with `401` on missing/invalid `X-Api-Key`
+    - Active only on `aws` profile when `engine.auth.enabled=true`
+    - Applies to `/openrtb2/**`
+    - Rejects with `401` on missing/invalid `X-Api-Key`
 2. `InFlightLimitFilter` (`@Order(Ordered.HIGHEST_PRECEDENCE + 10)`)
-   - Applies to `/openrtb2/**`
-   - Rejects with `429` when `engine.limits.maxInFlight` is exceeded
-   - Increments `engine_rejected_total{reason="in_flight_limit"}`
+    - Applies to `/openrtb2/**`
+    - Rejects with `429` when `engine.limits.maxInFlight` is exceeded
+    - Increments `engine_rejected_total{reason="in_flight_limit"}`
 3. `RequestLoggingFilter` (no explicit `@Order`)
-   - Uses default Spring ordering (runs after explicitly ordered filters)
-   - Adds/echoes `X-Request-Id`, echoes `X-Caller`, records request metrics/logs
+    - Uses default Spring ordering (runs after explicitly ordered filters)
+    - Adds/echoes `X-Request-Id`, echoes `X-Caller`, records request metrics/logs
 
 ---
 
@@ -54,18 +60,18 @@ The gateway normalizes incoming OpenRTB requests into a 2.6-first internal model
 
 - `inventoryType` is derived from `site` vs `app`
 - `tmax`:
-  - Default to `100ms` if missing
-  - Clamp to the range `10–1000ms`
+    - Default to `100ms` if missing
+    - Clamp to the range `10–60000ms`
 
 ### Pass-through (lossless for partner-specific data)
 
 - Preserve `ext` on:
-  - top-level request
-  - `imp`
-  - `site` / `app`
-  - `device`
-  - `user`
-  - `regs`
+    - top-level request
+    - `imp`
+    - `site` / `app`
+    - `device`
+    - `user`
+    - `regs`
 
 ### Device fields kept
 
@@ -94,11 +100,12 @@ Configured under `adapters.configs.<adapterName>`:
 
 ### Timeouts and budget
 
-- Adapter timeout uses `min(adapter.timeoutMs, request.tmaxMs - reserve)`
-- Overall request deadline uses `min(request.tmaxMs, bid.globalTimeoutMs)` when configured
+- Request deadline uses `request.tmaxMs` unless `bid.globalTimeoutMs > 0`, then
+  `min(request.tmaxMs, bid.globalTimeoutMs)`
+- Adapter timeout uses `min(adapter.timeoutMs, requestDeadlineMs - reserve)` (reserve is 10ms for merge/response)
 - Timeouts are treated as no-bid for response selection
-- If all adapters time out, return 503 (overload)
-- If all adapters error, return 503 (adapter failure)
+- If all adapters time out, return 204 (no-bid)
+- If all adapters error, return 204 (no-bid)
 - If no adapters are enabled, return 503 (configuration error)
 
 ### Result model
@@ -141,8 +148,8 @@ rules:
 - Select the highest-priced valid bid.
 - Ignore non-positive prices.
 - If no bid remains, return 204.
-- If all adapters time out, return 503 (overload).
-- If all adapters error, return 503 (adapter failure).
+- If all adapters time out, return 204 (no-bid).
+- If all adapters error, return 204 (no-bid).
 
 ---
 

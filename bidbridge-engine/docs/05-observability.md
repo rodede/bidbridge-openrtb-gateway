@@ -4,13 +4,13 @@
 
 ### Engine Metrics (with tags)
 
-- `requests_total` (`outcome` = `bid|nobid|error|unknown`)
+- `requests_total` (`outcome` = `bid|nobid_no_fill|nobid_timeout_deadline|nobid_timeout_adapters|nobid_filtered|nobid_adapter_failure|nobid_unknown|error|unknown`)
 - `errors_total` (`type`)
 - `adapter_timeouts` (`adapter`)
 - `adapter_bad_response` (`adapter`)
 - `adapter_errors` (`adapter`)
 - `engine_rejected_total` (`reason` = `in_flight_limit`) increments when `/openrtb2/**` is rejected with `429`
-- `request_latency` (`outcome`; timer with p95/p99)
+- `request_latency_seconds` (`outcome`; timer; exported as `_count`, `_sum`, and buckets)
 
 ---
 

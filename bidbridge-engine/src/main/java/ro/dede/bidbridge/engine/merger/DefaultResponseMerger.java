@@ -27,7 +27,10 @@ public class DefaultResponseMerger implements ResponseMerger {
         if (!anySuccess) {
             var anyTimeout = results.stream().anyMatch(result -> result.status() == AdapterResultStatus.TIMEOUT);
             if (anyTimeout) {
-                return Mono.error(new OverloadException("All adapters timed out"));
+                return Mono.error(new OverloadException(
+                        "All adapters timed out",
+                        OverloadException.Reason.ALL_ADAPTERS_TIMED_OUT
+                ));
             }
             return Mono.error(new AdapterFailureException("All adapters failed"));
         }

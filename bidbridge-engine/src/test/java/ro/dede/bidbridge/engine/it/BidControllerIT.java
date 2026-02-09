@@ -76,7 +76,7 @@ class BidControllerIT {
     }
 
     @Test
-    void returns503OnAdapterFailure() {
+    void returns204OnAdapterFailureNoBid() {
         var request = new BidRequest("req-1", List.of(new Imp("1", null, null, null, null, null, null)),
                 new Site(null), null, null, null, null, null, null);
 
@@ -88,12 +88,12 @@ class BidControllerIT {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .exchange()
-                .expectStatus().isEqualTo(503)
+                .expectStatus().isNoContent()
                 .expectHeader().valueEquals("X-OpenRTB-Version", "2.6");
     }
 
     @Test
-    void returns503OnOverload() {
+    void returns204OnTimeoutNoBid() {
         var request = new BidRequest("req-1", List.of(new Imp("1", null, null, null, null, null, null)),
                 new Site(null), null, null, null, null, null, null);
 
@@ -105,7 +105,7 @@ class BidControllerIT {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .exchange()
-                .expectStatus().isEqualTo(503)
+                .expectStatus().isNoContent()
                 .expectHeader().valueEquals("X-OpenRTB-Version", "2.6");
     }
 

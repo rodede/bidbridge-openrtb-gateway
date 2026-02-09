@@ -30,24 +30,16 @@ curl -i -X POST "http://localhost:8080/openrtb2/bid" \
   --data-binary @bidbridge-loadgen/src/main/resources/sample-request.json
 ```
 
-Expected outcomes:
-- `200` with bid response
-- `204` for no-bid
-- `400` for invalid input
-- `429` when in-flight request limit is exceeded
-- `503` for overload/adapter/config failures
+Status code semantics and response contract are defined in:
+- `bidbridge-engine/docs/02-api-contract.md`
 
 ## Configuration
 
 Main config file:
 - `bidbridge-engine/src/main/resources/application.yml`
 
-Key sections:
-- `engine.auth.*` (inbound API key auth; enabled in `aws` profile)
-- `engine.limits.maxInFlight` (concurrent in-flight cap on `/openrtb2/**`)
-- `adapters.configs.*`
-- `rules.*`
-- `bid.globalTimeoutMs`
+Implementation/default behavior details are defined in:
+- `bidbridge-engine/docs/00-implementation-details.md`
 
 ## Tests
 

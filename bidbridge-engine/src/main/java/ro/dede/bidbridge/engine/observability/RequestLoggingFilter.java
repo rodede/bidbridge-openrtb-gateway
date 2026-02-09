@@ -62,6 +62,8 @@ public class RequestLoggingFilter implements WebFilter {
                     }
                     var durationMs = (System.nanoTime() - start) / 1_000_000L;
                     var status = exchange.getResponse().getStatusCode();
+                    var statusValue = status == null ? 0 : status.value();
+                    var outcome = resolveOutcome(exchange, statusValue);
                     var requestIdValue = (String) exchange.getAttribute(REQUEST_ID_ATTR);
                     var callerValue = normalizeCaller((String) exchange.getAttribute(CALLER_ATTR));
                     var previousRequestId = MDC.get(REQUEST_ID_ATTR);
@@ -71,9 +73,10 @@ public class RequestLoggingFilter implements WebFilter {
                             MDC.put(REQUEST_ID_ATTR, requestIdValue);
                         }
                         MDC.put(CALLER_ATTR, callerValue);
-                        log.info("request completed path={} status={} caller={} durationMs={}",
+                        log.info("request completed path={} status={} outcome={} caller={} durationMs={}",
                                 path,
-                                status == null ? "unknown" : status.value(),
+                                statusValue == 0 ? "unknown" : statusValue,
+                                outcome,
                                 callerValue,
                                 durationMs);
                     } finally {
@@ -92,18 +95,26 @@ public class RequestLoggingFilter implements WebFilter {
                 .doFinally(signalType -> {
                     var status = exchange.getResponse().getStatusCode();
                     var statusValue = status == null ? 0 : status.value();
-                    var outcome = outcomeForStatus(statusValue);
+                    var outcome = resolveOutcome(exchange, statusValue);
                     metrics.recordRequestOutcome(outcome);
                     metrics.stopRequestTimer(timer, outcome);
                 });
     }
 
+    private String resolveOutcome(ServerWebExchange exchange, int status) {
+        var explicit = exchange.getAttribute(RequestOutcomes.REQUEST_OUTCOME);
+        if (explicit instanceof String explicitValue && !explicitValue.isBlank()) {
+            return explicitValue;
+        }
+        return outcomeForStatus(status);
+    }
+
     private String outcomeForStatus(int status) {
         return switch (status) {
-            case 200 -> "bid";
-            case 204 -> "nobid";
-            case 0 -> "unknown";
-            default -> "error";
+            case 200 -> RequestOutcomes.BID;
+            case 204 -> RequestOutcomes.NO_BID_UNKNOWN;
+            case 0 -> RequestOutcomes.UNKNOWN;
+            default -> RequestOutcomes.ERROR;
         };
     }
 
