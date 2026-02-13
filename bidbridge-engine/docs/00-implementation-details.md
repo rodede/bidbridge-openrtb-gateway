@@ -7,17 +7,14 @@ Refer to `bidbridge-engine/docs/01-architecture.md` for component-level context.
 
 ## Error Handling (MVP)
 
-- Parsing errors → 400
-- Validation errors → 400
-- Request deadline timeout → 204 (`nobid_timeout_deadline`)
-- Rules-filtered request → 204 (`nobid_filtered`)
-- All adapters timed out → 204 (`nobid_timeout_adapters`)
-- All adapters errored (with no successful/no-bid result) → 204 (`nobid_adapter_failure`)
-- Error responses return a JSON body: `{ "error": "<message>" }`
+Public HTTP status/error contract is defined in `bidbridge-engine/README.md`.
+Internal no-bid outcome keys used in logs/metrics:
 
-- no bid -> 204 (`nobid_no_fill`)
-
-- Public HTTP contract remains in `bidbridge-engine/docs/02-api-contract.md`.
+- `nobid_timeout_deadline`
+- `nobid_filtered`
+- `nobid_timeout_adapters`
+- `nobid_adapter_failure`
+- `nobid_no_fill`
 
 ---
 
@@ -42,17 +39,10 @@ Current filter execution order for inbound HTTP requests:
 ## Normalization
 
 The gateway normalizes incoming OpenRTB requests into a 2.6-first internal model.
-
-### Required fields
-
-- `id` must be present and non-blank
-- `imp` must exist and contain at least one impression
-- Exactly one of `site` or `app` must be present
+Validation-required request fields are documented in `bidbridge-engine/README.md`.
 
 ### Impression rules
 
-- `imp.id` must be present and non-blank
-- At least one of `banner`, `video`, `audio`, or `native` must be present
 - If multiple types are present, select deterministically: `video` > `audio` > `banner` > `native`
 - `imp.bidfloor` defaults to `0` if missing
 
@@ -148,8 +138,6 @@ rules:
 - Select the highest-priced valid bid.
 - Ignore non-positive prices.
 - If no bid remains, return 204.
-- If all adapters time out, return 204 (no-bid).
-- If all adapters error, return 204 (no-bid).
 
 ---
 
