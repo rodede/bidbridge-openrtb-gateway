@@ -1,0 +1,82 @@
+@startuml
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+package "API Layer" {
+  class OpenRtbBidController
+  class EngineAuthFilter
+  class InFlightLimitFilter
+  class RequestLoggingFilter
+  class ApiContractValidator
+  class RequestContext
+}
+
+package "Normalization Layer" {
+  class OpenRtbRequestNormalizer
+  class NormalizedBidRequest
+}
+
+package "Rules Layer" {
+  class RulesEngine
+  class InventoryRule
+  class BidfloorRule
+  class AdapterAllowDenyRule
+  class RulesResult
+}
+
+package "Service Orchestration Layer" {
+  class BidRequestOrchestrator
+  class TimeoutBudgetCalculator
+  class AdapterDispatcher
+}
+
+package "Adapter Layer" {
+  interface BidderAdapter
+  class SimulatorAdapter
+  class HttpBidderClient
+  class AdapterResult
+}
+
+package "Response Merger Layer" {
+  class ResponseMerger
+  class BidResponseBuilder
+}
+
+package "Observability" {
+  class MetricsRecorder
+  class StructuredRequestLogger
+}
+
+OpenRtbBidController --> ApiContractValidator
+OpenRtbBidController --> OpenRtbRequestNormalizer
+OpenRtbBidController --> BidRequestOrchestrator
+OpenRtbBidController --> BidResponseBuilder
+
+EngineAuthFilter --> RequestContext
+InFlightLimitFilter --> RequestContext
+RequestLoggingFilter --> StructuredRequestLogger
+
+OpenRtbRequestNormalizer --> NormalizedBidRequest
+
+BidRequestOrchestrator --> RulesEngine
+RulesEngine --> InventoryRule
+RulesEngine --> BidfloorRule
+RulesEngine --> AdapterAllowDenyRule
+RulesEngine --> RulesResult
+
+BidRequestOrchestrator --> TimeoutBudgetCalculator
+BidRequestOrchestrator --> AdapterDispatcher
+AdapterDispatcher --> BidderAdapter
+BidderAdapter <|.. SimulatorAdapter
+SimulatorAdapter --> HttpBidderClient
+AdapterDispatcher --> AdapterResult
+
+BidRequestOrchestrator --> ResponseMerger
+ResponseMerger --> AdapterResult
+ResponseMerger --> BidResponseBuilder
+
+OpenRtbBidController ..> MetricsRecorder
+BidRequestOrchestrator ..> MetricsRecorder
+AdapterDispatcher ..> MetricsRecorder
+ResponseMerger ..> MetricsRecorder
+@enduml
