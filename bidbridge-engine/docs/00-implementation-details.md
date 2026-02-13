@@ -107,57 +107,21 @@ Configured under `adapters.configs.<adapterName>`:
 
 ## Rules Engine (MVP)
 
-Configured under `rules`:
-
-- `allowInventory`: list of allowed inventory types (SITE/APP)
-- `denyInventory`: list of disallowed inventory types
-- `minBidfloor`: drop imps below this bidfloor
-- `allowAdapters`: allowlist of adapter names
-- `denyAdapters`: denylist of adapter names
-
-Behavior:
-
-- If no rules are set, allow all.
-- Inventory rules can filter all adapters → no-bid.
-- Bidfloor rule can filter all imps → no-bid.
-- Applied rules and final adapter set are logged.
-
-Example:
-
-```
-rules:
-  allowInventory: [SITE]
-  minBidfloor: 0.5
-  allowAdapters: [simulator]
-```
+Concrete `rules.*` keys are configured in runtime config.
+Architecture-level rule behavior (families, order, and boundaries) is documented in
+`bidbridge-engine/docs/01-architecture.md`.
+Implementation detail: applied rules and final adapter set are logged per request.
 
 ---
 
 ## Response Merger (MVP)
 
-- Select the highest-priced valid bid.
-- Ignore non-positive prices.
-- If no bid remains, return 204.
+Architecture-level merge behavior is documented in `bidbridge-engine/docs/01-architecture.md`.
+Implementation detail: merger consumes lightweight adapter result objects (no raw payload retention).
 
 ---
 
 ## Technical Notes
-
-### Project bootstrap command
-
-```
-spring init \
-  --type=maven-project \
-  --language=java \
-  --boot-version=4.0.1 \
-  --java-version=25 \
-  --groupId=ro.dede \
-  --artifactId=bidbridge-engine \
-  --name="BidBridge Engine" \
-  --package-name=ro.dede.bidbridge.engine \
-  --dependencies=webflux,actuator,validation \
-  bidbridge-engine
-```
 
 ### Validation notes
 

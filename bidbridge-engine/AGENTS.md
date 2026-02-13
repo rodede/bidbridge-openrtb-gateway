@@ -6,12 +6,7 @@ Root `AGENTS.md` rules apply here. This file adds engine-specific constraints.
 
 - `bidbridge-engine/docs/00-implementation-details.md` — MVP behavior and defaults
 - `bidbridge-engine/docs/01-architecture.md` — architecture and boundaries
-- `bidbridge-engine/docs/03-adapters.md` — adapter behavior
-- `bidbridge-engine/docs/04-rules-engine.md` — implemented rules
-- `bidbridge-engine/docs/05-observability.md` — metrics/logging conventions
-- `bidbridge-engine/docs/06-testing.md` — testing strategy
-- `bidbridge-engine/docs/07-performance-security.md` — performance/security constraints
-- `bidbridge-engine/README.md` — module run/test quickstart
+- `bidbridge-engine/README.md` — module entrypoint, run/test, and API contract
 
 ## Engine Rules
 

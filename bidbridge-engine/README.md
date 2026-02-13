@@ -76,7 +76,7 @@ No-bid behavior:
 
 - `204` is used for regular no-fill, timeout no-bid, rules-filtered no-bid, and all-adapters-error no-bid.
 - Timeout no-bid is split internally into deadline timeout vs all-adapters-timeout outcomes.
-- Distinction is internal-only via logs and metrics (see observability docs).
+- Distinction is internal-only via logs and metrics (see `bidbridge-engine/docs/01-architecture.md`).
 
 ### BidResponse Rules
 
@@ -100,9 +100,4 @@ mvn -pl bidbridge-engine test
 ## Engine Docs
 
 - `bidbridge-engine/docs/00-implementation-details.md`
-- `bidbridge-engine/docs/01-architecture.md`
-- `bidbridge-engine/docs/03-adapters.md`
-- `bidbridge-engine/docs/04-rules-engine.md`
-- `bidbridge-engine/docs/05-observability.md`
-- `bidbridge-engine/docs/06-testing.md`
-- `bidbridge-engine/docs/07-performance-security.md`
+- `bidbridge-engine/docs/01-architecture.md` (primary technical architecture reference)
