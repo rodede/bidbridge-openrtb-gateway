@@ -57,10 +57,12 @@ Expected outcomes: `200` (bid), `204` (no-bid), or `400` (invalid request).
 ## Module Docs
 
 - Engine: `bidbridge-engine/README.md`
+- Engine architecture: `bidbridge-engine/docs/01-architecture.md`
 - Simulator: `bidbridge-simulator/README.md`
+- Simulator architecture: `bidbridge-simulator/docs/01-architecture.md`
 - Load generator: `bidbridge-loadgen/README.md`
+- Load generator architecture: `bidbridge-loadgen/docs/01-architecture.md`
 - Repo-level docs: `docs/`
-- Engine specs: `bidbridge-engine/docs/`
 
 ## Observability
 

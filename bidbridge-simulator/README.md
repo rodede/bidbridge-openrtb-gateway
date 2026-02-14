@@ -8,7 +8,9 @@ This file documents simulator behavior and usage:
 - API endpoints, config semantics, metrics, and local run commands.
 - Keep this file cloud-agnostic.
 
-AWS account and deployment runbook details live in `AWS_Architecture.md`.
+Architecture and layer responsibilities live in:
+- `bidbridge-simulator/docs/01-architecture.md`
+- `bidbridge-simulator/docs/architecture-class-diagram.puml`
 
 ## Purpose
 
@@ -44,6 +46,29 @@ docker run --rm -p 8085:8085 --name "bidbridge-simulator" -v "$PWD/dsps.yml:/sim
 ```bash
 docker rm -f bidbridge-simulator && docker rmi bidbridge-simulator:local
 ```
+
+## API contract
+
+### Bid endpoint
+
+- `POST /openrtb2/{dsp}/bid`
+- Request: OpenRTB-like JSON with required fields:
+  - `id`
+  - `imp` (non-empty)
+  - each impression contains `imp.id`
+- Response statuses:
+  - `200` bid response JSON
+  - `204` no-bid
+  - `400` bad request or unknown dsp
+  - `401` when auth is enabled and token is invalid/missing
+  - `429` when in-flight limit is exceeded
+  - `500` unexpected internal error
+- Response header: `X-OpenRTB-Version: 2.6`
+
+### Admin endpoints
+
+- `POST /admin/reload-dsps` — triggers config reload and returns `{status, loadedCount, versionTimestamp, message}`
+- `GET /admin/dsps` — returns active config snapshot `{loadedCount, versionTimestamp, versionTime, configs}`
 
 ## Configuration
 
@@ -82,14 +107,12 @@ Config notes:
 - `<dsp>.currency`: value used for the `cur` field in the response.
 - `<dsp>.admTemplate`: string inserted into `adm` (often VAST XML).
 - `<dsp>.responseDelayMs`: artificial delay (in ms) before responding, to simulate bidder latency.
+- `simulator.auth.enabled`: enables auth filter for bid/admin routes.
+- `simulator.auth.bidApiKey`: expected `X-Api-Key` for `/openrtb2/**` when auth is enabled.
+- `simulator.auth.adminApiToken`: expected `X-Admin-Token` for `/admin/**` when auth is enabled.
 
 Polling:
 - `dsps.pollIntervalMs`: reload interval in milliseconds (default 2000).
-
-## Admin endpoints
-
-- `POST /admin/reload-dsps` — reloads dsps.yml on demand and returns `{status, loadedCount, versionTimestamp, message}`
-- `GET /admin/dsps` — returns the loaded DSP configs and version timestamp
 
 ## Logging
 
@@ -120,7 +143,7 @@ Observability endpoints:
 Emitted metrics:
 
 - `sim_requests_total{outcome=bid|nobid|error}` — total request outcomes derived from response status (`200=bid`, `204=nobid`, other statuses=`error`).
-- `sim_latency_ms` — end-to-end request duration timer in milliseconds.
+- `sim_latency_ms` — Micrometer timer name (exported in Prometheus as `sim_latency_ms_seconds_count`, `sim_latency_ms_seconds_sum`, and `sim_latency_ms_seconds_bucket` when histogram buckets are enabled).
 - `sim_reload_success_total` — cumulative number of successful `dsps.yml` reloads.
 - `sim_reload_fail_total` — cumulative number of failed `dsps.yml` reload attempts.
 - `sim_active_dsps` — gauge with the current number of loaded DSP configurations.

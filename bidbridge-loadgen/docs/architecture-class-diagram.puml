@@ -1,0 +1,55 @@
+@startuml
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+package "CLI/Config Layer" {
+  class LoadGenMain
+  class LoadGenConfig
+}
+
+package "Payload Layer" {
+  class ReplayFileReader
+  class PayloadSelector
+}
+
+package "Scheduling Layer" {
+  class RequestScheduler
+}
+
+package "HTTP Dispatch Layer" {
+  class WebClient
+  class HttpClient
+  class RequestSender
+}
+
+package "Metrics/Reporting Layer" {
+  class LoadGenMetrics
+  class SummaryPrinter
+}
+
+package "Resource Lifecycle Layer" {
+  class ConnectionProvider
+  class LoopResources
+  class TimerScheduler
+}
+
+LoadGenMain --> LoadGenConfig
+LoadGenMain --> ReplayFileReader
+LoadGenMain --> PayloadSelector
+LoadGenMain --> RequestScheduler
+RequestScheduler --> RequestSender
+
+RequestSender --> WebClient
+WebClient --> HttpClient
+RequestSender --> PayloadSelector
+RequestSender --> LoadGenMetrics
+
+LoadGenMetrics --> SummaryPrinter
+LoadGenMain --> LoadGenMetrics
+
+LoadGenMain --> ConnectionProvider
+LoadGenMain --> LoopResources
+LoadGenMain --> TimerScheduler
+RequestSender ..> TimerScheduler
+
+@enduml

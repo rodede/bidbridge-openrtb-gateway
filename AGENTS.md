@@ -13,6 +13,7 @@ Use `docs/` for repo-wide context, then use module-local guidance.
 - `bidbridge-engine/AGENTS.md` — engine-specific rules and docs index
 - `bidbridge-simulator/AGENTS.md` — simulator-specific rules
 - `bidbridge-loadgen/README.md` — load generator usage
+- `bidbridge-loadgen/docs/01-architecture.md` — load generator architecture
 
 ## Core Rules (Always On)
 

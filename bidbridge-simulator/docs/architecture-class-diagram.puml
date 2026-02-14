@@ -1,0 +1,68 @@
+@startuml
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+package "API Layer" {
+  class SimulatorController
+  class DspAdminController
+  class SimulatorErrorHandler
+}
+
+package "Request Filters" {
+  class RequestLoggingFilter
+  class SimulatorAuthFilter
+  class InFlightLimitFilter
+  class RequestLogEnricher
+}
+
+package "DSP Decision Layer" {
+  class DspResponseService
+  class BidRequestValidator
+}
+
+package "Bid Builder Layer" {
+  interface DspBidder
+  class DefaultDspBidder
+  class BidResponse
+}
+
+package "Configuration Layer" {
+  interface DspConfigStore
+  class FileBackedDspConfigStore
+  class DspConfigPoller
+  class LocalYamlDspConfigLoader
+  class S3YamlDspConfigLoader
+  class DspsFileProperties
+}
+
+package "Observability" {
+  class MeterRegistry
+}
+
+SimulatorController --> DspResponseService
+SimulatorController ..> SimulatorErrorHandler
+DspAdminController --> DspConfigStore
+
+RequestLoggingFilter --> RequestLogEnricher
+SimulatorAuthFilter --> RequestLogEnricher
+InFlightLimitFilter --> RequestLogEnricher
+InFlightLimitFilter ..> MeterRegistry
+RequestLoggingFilter ..> MeterRegistry
+
+DspResponseService --> DspConfigStore
+DspResponseService --> BidRequestValidator
+DspResponseService --> DspBidder
+DspBidder <|.. DefaultDspBidder
+DefaultDspBidder --> BidResponse
+
+DspConfigStore <|.. FileBackedDspConfigStore
+FileBackedDspConfigStore --> LocalYamlDspConfigLoader
+FileBackedDspConfigStore --> S3YamlDspConfigLoader
+FileBackedDspConfigStore --> DspsFileProperties
+DspConfigPoller --> DspConfigStore
+DspConfigPoller --> LocalYamlDspConfigLoader
+DspConfigPoller --> S3YamlDspConfigLoader
+DspConfigPoller --> DspsFileProperties
+FileBackedDspConfigStore ..> MeterRegistry
+
+@enduml

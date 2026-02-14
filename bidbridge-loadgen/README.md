@@ -8,6 +8,14 @@ caps the number of concurrent in-flight requests, and prints basic status/latenc
 Requests are sent using Spring WebFlux WebClient backed by Reactor Netty, with dedicated event loop
 resources that are disposed after the run to avoid lingering threads.
 
+## Documentation boundaries
+
+This file documents usage, CLI options, and execution examples.
+
+Architecture and layer responsibilities live in:
+- `bidbridge-loadgen/docs/01-architecture.md`
+- `bidbridge-loadgen/docs/architecture-class-diagram.puml`
+
 ## Run
 
 From repo root:
