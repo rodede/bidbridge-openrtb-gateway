@@ -1,6 +1,7 @@
 package ro.dede.bidbridge.engine.normalization;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.web.server.ServerWebInputException;
 import ro.dede.bidbridge.engine.domain.normalized.ImpType;
 import ro.dede.bidbridge.engine.domain.normalized.InventoryType;
 import ro.dede.bidbridge.engine.domain.openrtb.*;
@@ -19,7 +20,7 @@ class DefaultBidRequestNormalizerTest {
         var request = new BidRequest("req-1", List.of(new Imp("1", new Banner(null), null, null, null, null, null)),
                 null, null, null, null, null, null, null);
 
-        assertThrows(InvalidRequestException.class, () -> normalizer.normalize(request).block());
+        assertThrows(ServerWebInputException.class, () -> normalizer.normalize(request).block());
     }
 
     @Test
@@ -27,7 +28,7 @@ class DefaultBidRequestNormalizerTest {
         var request = new BidRequest("req-1", List.of(new Imp("1", new Banner(null), null, null, null, null, null)),
                 new Site(null), new App(null), null, null, null, null, null);
 
-        assertThrows(InvalidRequestException.class, () -> normalizer.normalize(request).block());
+        assertThrows(ServerWebInputException.class, () -> normalizer.normalize(request).block());
     }
 
     @Test
@@ -35,7 +36,7 @@ class DefaultBidRequestNormalizerTest {
         var request = new BidRequest("req-1", List.of(new Imp("1", null, null, null, null, null, null)),
                 new Site(null), null, null, null, null, null, null);
 
-        assertThrows(InvalidRequestException.class, () -> normalizer.normalize(request).block());
+        assertThrows(ServerWebInputException.class, () -> normalizer.normalize(request).block());
     }
 
     @Test

@@ -7,9 +7,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.ServerWebInputException;
-import ro.dede.bidbridge.engine.normalization.InvalidRequestException;
 import ro.dede.bidbridge.engine.observability.MetricsCollector;
-import ro.dede.bidbridge.engine.observability.RequestOutcomes;
+import ro.dede.bidbridge.engine.observability.RequestOutcome;
 import ro.dede.bidbridge.engine.service.AdapterFailureException;
 import ro.dede.bidbridge.engine.service.ConfigurationException;
 import ro.dede.bidbridge.engine.service.FilteredRequestException;
@@ -43,34 +42,28 @@ public class ApiErrorHandler {
 
     @ExceptionHandler(ServerWebInputException.class)
     public ResponseEntity<ErrorResponse> handleInput(ServerWebInputException ex) {
-        var message = ex.getReason() == null || ex.getReason().isBlank()
-                ? "Invalid request"
-                : ex.getReason();
+        var message = extractBadRequestMessage(ex);
         metrics.recordError("input");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                 .body(new ErrorResponse(message));
     }
 
-    @ExceptionHandler(InvalidRequestException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidRequest(InvalidRequestException ex) {
-        var message = ex.getMessage() == null || ex.getMessage().isBlank()
+    private String extractBadRequestMessage(ServerWebInputException ex) {
+        var message = ex.getReason();
+        return message == null || message.isBlank()
                 ? "Invalid request"
-                : ex.getMessage();
-        metrics.recordError("invalid");
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
-                .body(new ErrorResponse(message));
+                : message;
     }
 
     @ExceptionHandler(OverloadException.class)
     public ResponseEntity<Void> handleOverload(OverloadException ex, ServerWebExchange exchange) {
         var outcome = switch (ex.reason()) {
-            case REQUEST_DEADLINE_TIMEOUT -> RequestOutcomes.NO_BID_TIMEOUT_DEADLINE;
-            case ALL_ADAPTERS_TIMED_OUT -> RequestOutcomes.NO_BID_TIMEOUT_ADAPTERS;
-            case UNKNOWN -> RequestOutcomes.NO_BID_TIMEOUT_DEADLINE;
+            case REQUEST_DEADLINE_TIMEOUT -> RequestOutcome.NO_BID_TIMEOUT_DEADLINE;
+            case ALL_ADAPTERS_TIMED_OUT -> RequestOutcome.NO_BID_TIMEOUT_ADAPTERS;
+            case UNKNOWN -> RequestOutcome.NO_BID_TIMEOUT_DEADLINE;
         };
-        exchange.getAttributes().put(RequestOutcomes.REQUEST_OUTCOME, outcome);
+        exchange.getAttributes().put(MetricsCollector.ATTR_REQUEST_OUTCOME, outcome);
         return ResponseEntity.noContent()
                 .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                 .build();
@@ -79,7 +72,7 @@ public class ApiErrorHandler {
     @ExceptionHandler(AdapterFailureException.class)
     public ResponseEntity<Void> handleAdapterFailure(AdapterFailureException ex, ServerWebExchange exchange) {
         metrics.recordError("adapter_failure");
-        exchange.getAttributes().put(RequestOutcomes.REQUEST_OUTCOME, RequestOutcomes.NO_BID_ADAPTER_FAILURE);
+        exchange.getAttributes().put(MetricsCollector.ATTR_REQUEST_OUTCOME, RequestOutcome.NO_BID_ADAPTER_FAILURE);
         return ResponseEntity.noContent()
                 .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                 .build();
@@ -87,7 +80,7 @@ public class ApiErrorHandler {
 
     @ExceptionHandler(FilteredRequestException.class)
     public ResponseEntity<Void> handleFilteredRequest(ServerWebExchange exchange) {
-        exchange.getAttributes().put(RequestOutcomes.REQUEST_OUTCOME, RequestOutcomes.NO_BID_FILTERED);
+        exchange.getAttributes().put(MetricsCollector.ATTR_REQUEST_OUTCOME, RequestOutcome.NO_BID_FILTERED);
         return ResponseEntity.noContent()
                 .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                 .build();

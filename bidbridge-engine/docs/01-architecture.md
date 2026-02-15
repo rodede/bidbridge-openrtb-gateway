@@ -159,7 +159,7 @@ Class diagram source: `architecture-class-diagram.puml`
 
 - Metrics cover request outcomes, adapter failures, rejections, and latency timers.
 - Core metric families: `requests_total`, `errors_total`, `adapter_timeouts`, `adapter_bad_response`, `adapter_errors`,
-  `engine_rejected_total`, `request_latency_seconds`.
+  `engine_rejected_total`, `request_latency`.
 - Timer metrics are exported as Prometheus `*_seconds_count`, `*_seconds_sum`, and buckets (when enabled).
 - Logs include request correlation, caller context, adapter identity, latency, and outcome.
 - Tracing scope: request IDs are implemented; distributed tracing spans are planned.

@@ -76,7 +76,7 @@ public class RequestLoggingFilter implements WebFilter {
                         log.info("request completed path={} status={} outcome={} caller={} durationMs={}",
                                 path,
                                 statusValue == 0 ? "unknown" : statusValue,
-                                outcome,
+                                outcome.value(),
                                 callerValue,
                                 durationMs);
                     } finally {
@@ -101,21 +101,12 @@ public class RequestLoggingFilter implements WebFilter {
                 });
     }
 
-    private String resolveOutcome(ServerWebExchange exchange, int status) {
-        var explicit = exchange.getAttribute(RequestOutcomes.REQUEST_OUTCOME);
-        if (explicit instanceof String explicitValue && !explicitValue.isBlank()) {
-            return explicitValue;
+    private RequestOutcome resolveOutcome(ServerWebExchange exchange, int status) {
+        var explicit = exchange.getAttribute(MetricsCollector.ATTR_REQUEST_OUTCOME);
+        if (explicit instanceof RequestOutcome requestOutcome) {
+            return requestOutcome;
         }
-        return outcomeForStatus(status);
-    }
-
-    private String outcomeForStatus(int status) {
-        return switch (status) {
-            case 200 -> RequestOutcomes.BID;
-            case 204 -> RequestOutcomes.NO_BID_UNKNOWN;
-            case 0 -> RequestOutcomes.UNKNOWN;
-            default -> RequestOutcomes.ERROR;
-        };
+        return RequestOutcome.fromStatus(status);
     }
 
     private String normalizeCaller(String caller) {

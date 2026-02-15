@@ -3,6 +3,7 @@ package ro.dede.bidbridge.engine.normalization;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerWebInputException;
 import reactor.core.publisher.Mono;
 import ro.dede.bidbridge.engine.domain.normalized.*;
 import ro.dede.bidbridge.engine.domain.openrtb.BidRequest;
@@ -52,7 +53,7 @@ public class DefaultBidRequestNormalizer implements BidRequestNormalizer {
         var hasSite = request.site() != null;
         var hasApp = request.app() != null;
         if (hasSite == hasApp) {
-            throw new InvalidRequestException("Exactly one of site or app must be present");
+            throw new ServerWebInputException("Exactly one of site or app must be present");
         }
         return hasSite ? InventoryType.SITE : InventoryType.APP;
     }
@@ -96,7 +97,7 @@ public class DefaultBidRequestNormalizer implements BidRequestNormalizer {
         var hasBanner = imp.banner() != null;
         var hasNative = imp.nativeObject() != null;
         if (!hasVideo && !hasAudio && !hasBanner && !hasNative) {
-            throw new InvalidRequestException("Each imp must include one of banner, video, audio, or native");
+            throw new ServerWebInputException("Each imp must include one of banner, video, audio, or native");
         }
         if ((hasVideo && hasAudio) || (hasVideo && hasBanner) || (hasVideo && hasNative)
                 || (hasAudio && hasBanner) || (hasAudio && hasNative) || (hasBanner && hasNative)) {

@@ -1,7 +1,5 @@
 package ro.dede.bidbridge.engine.filters.limits;
 
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -13,6 +11,7 @@ import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 import ro.dede.bidbridge.engine.api.OpenRtbConstants;
 import ro.dede.bidbridge.engine.config.EngineLimitsProperties;
+import ro.dede.bidbridge.engine.observability.MetricsCollector;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Semaphore;
@@ -28,14 +27,12 @@ public class InFlightLimitFilter implements WebFilter {
             "{\"error\":\"Too many requests\"}".getBytes(StandardCharsets.UTF_8);
 
     private final Semaphore semaphore;
-    private final Counter rejectedCounter;
+    private final MetricsCollector metricsCollector;
 
-    public InFlightLimitFilter(EngineLimitsProperties properties, MeterRegistry meterRegistry) {
+    public InFlightLimitFilter(EngineLimitsProperties properties, MetricsCollector metricsCollector) {
         var maxInFlight = Math.max(1, properties.getMaxInFlight());
         this.semaphore = new Semaphore(maxInFlight);
-        this.rejectedCounter = Counter.builder("engine_rejected_total")
-                .tag("reason", "in_flight_limit")
-                .register(meterRegistry);
+        this.metricsCollector = metricsCollector;
     }
 
     @Override
@@ -45,7 +42,7 @@ public class InFlightLimitFilter implements WebFilter {
             return chain.filter(exchange);
         }
         if (!semaphore.tryAcquire()) {
-            rejectedCounter.increment();
+            metricsCollector.recordInFlightLimitRejection();
             var response = exchange.getResponse();
             response.setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
             response.getHeaders().setContentType(MediaType.APPLICATION_JSON);

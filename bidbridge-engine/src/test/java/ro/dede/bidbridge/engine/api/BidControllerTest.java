@@ -9,11 +9,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.web.server.ServerWebInputException;
 import reactor.core.publisher.Mono;
 import ro.dede.bidbridge.engine.domain.normalized.*;
 import ro.dede.bidbridge.engine.domain.openrtb.*;
 import ro.dede.bidbridge.engine.normalization.BidRequestNormalizer;
-import ro.dede.bidbridge.engine.normalization.InvalidRequestException;
 import ro.dede.bidbridge.engine.service.BidService;
 import ro.dede.bidbridge.engine.service.OverloadException;
 import ro.dede.bidbridge.engine.config.EngineLimitsProperties;
@@ -123,7 +123,7 @@ class BidControllerTest {
         var request = new BidRequest("req-1", List.of(new Imp("1", null, null, null, null, null, null)),
                 new ro.dede.bidbridge.engine.domain.openrtb.Site(null), null, null, null, null, null, null);
 
-        bidRequestNormalizer.setNext(Mono.error(new InvalidRequestException("bad")));
+        bidRequestNormalizer.setNext(Mono.error(new ServerWebInputException("bad")));
 
         webTestClient.post()
                 .uri("/openrtb2/bid")

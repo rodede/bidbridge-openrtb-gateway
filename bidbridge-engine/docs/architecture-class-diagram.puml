@@ -3,80 +3,84 @@ skinparam packageStyle rectangle
 skinparam classAttributeIconSize 0
 
 package "API Layer" {
-  class OpenRtbBidController
+  class BidController
+  class ApiErrorHandler
   class EngineAuthFilter
   class InFlightLimitFilter
   class RequestLoggingFilter
-  class ApiContractValidator
-  class RequestContext
 }
 
 package "Normalization Layer" {
-  class OpenRtbRequestNormalizer
+  interface BidRequestNormalizer
+  class DefaultBidRequestNormalizer
   class NormalizedBidRequest
 }
 
 package "Rules Layer" {
-  class RulesEngine
-  class InventoryRule
-  class BidfloorRule
-  class AdapterAllowDenyRule
+  interface RulesEvaluator
+  class DefaultRulesEvaluator
+  class RulesProperties
   class RulesResult
 }
 
 package "Service Orchestration Layer" {
-  class BidRequestOrchestrator
-  class TimeoutBudgetCalculator
-  class AdapterDispatcher
+  interface BidService
+  class DefaultBidService
+  class BidServiceProperties
 }
 
 package "Adapter Layer" {
+  class AdapterRegistry
   interface BidderAdapter
   class SimulatorAdapter
+  class SimulatorHttpAdapter
+  class AbstractHttpAdapter
   class HttpBidderClient
+  class WebClientBidderClient
   class AdapterResult
 }
 
 package "Response Merger Layer" {
-  class ResponseMerger
-  class BidResponseBuilder
+  interface ResponseMerger
+  class DefaultResponseMerger
 }
 
 package "Observability" {
-  class MetricsRecorder
-  class StructuredRequestLogger
+  class MetricsCollector
+  class RequestOutcome
 }
 
-OpenRtbBidController --> ApiContractValidator
-OpenRtbBidController --> OpenRtbRequestNormalizer
-OpenRtbBidController --> BidRequestOrchestrator
-OpenRtbBidController --> BidResponseBuilder
+BidController --> BidRequestNormalizer
+BidController --> BidService
+BidController ..> RequestOutcome
+ApiErrorHandler ..> MetricsCollector
+ApiErrorHandler ..> RequestOutcome
 
-EngineAuthFilter --> RequestContext
-InFlightLimitFilter --> RequestContext
-RequestLoggingFilter --> StructuredRequestLogger
+BidRequestNormalizer <|.. DefaultBidRequestNormalizer
+DefaultBidRequestNormalizer --> NormalizedBidRequest
 
-OpenRtbRequestNormalizer --> NormalizedBidRequest
+BidService <|.. DefaultBidService
+DefaultBidService --> AdapterRegistry
+DefaultBidService --> RulesEvaluator
+DefaultBidService --> ResponseMerger
+DefaultBidService --> MetricsCollector
+DefaultBidService --> BidServiceProperties
 
-BidRequestOrchestrator --> RulesEngine
-RulesEngine --> InventoryRule
-RulesEngine --> BidfloorRule
-RulesEngine --> AdapterAllowDenyRule
-RulesEngine --> RulesResult
+RulesEvaluator <|.. DefaultRulesEvaluator
+DefaultRulesEvaluator --> RulesProperties
+DefaultRulesEvaluator --> RulesResult
 
-BidRequestOrchestrator --> TimeoutBudgetCalculator
-BidRequestOrchestrator --> AdapterDispatcher
-AdapterDispatcher --> BidderAdapter
+AdapterRegistry --> BidderAdapter
 BidderAdapter <|.. SimulatorAdapter
-SimulatorAdapter --> HttpBidderClient
-AdapterDispatcher --> AdapterResult
+BidderAdapter <|.. AbstractHttpAdapter
+AbstractHttpAdapter <|-- SimulatorHttpAdapter
+AbstractHttpAdapter --> HttpBidderClient
+HttpBidderClient <|.. WebClientBidderClient
+BidderAdapter --> AdapterResult
 
-BidRequestOrchestrator --> ResponseMerger
-ResponseMerger --> AdapterResult
-ResponseMerger --> BidResponseBuilder
+ResponseMerger <|.. DefaultResponseMerger
+DefaultResponseMerger --> AdapterResult
 
-OpenRtbBidController ..> MetricsRecorder
-BidRequestOrchestrator ..> MetricsRecorder
-AdapterDispatcher ..> MetricsRecorder
-ResponseMerger ..> MetricsRecorder
+RequestLoggingFilter ..> MetricsCollector
+InFlightLimitFilter ..> MetricsCollector
 @enduml

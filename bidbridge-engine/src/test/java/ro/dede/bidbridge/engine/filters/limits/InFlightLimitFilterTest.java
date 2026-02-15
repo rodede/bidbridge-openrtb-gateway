@@ -8,6 +8,7 @@ import org.springframework.web.server.WebFilterChain;
 import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 import ro.dede.bidbridge.engine.config.EngineLimitsProperties;
+import ro.dede.bidbridge.engine.observability.MetricsCollector;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -23,7 +24,8 @@ class InFlightLimitFilterTest {
         var properties = new EngineLimitsProperties();
         properties.setMaxInFlight(1);
         var registry = new SimpleMeterRegistry();
-        var filter = new InFlightLimitFilter(properties, registry);
+        var metricsCollector = new MetricsCollector(registry);
+        var filter = new InFlightLimitFilter(properties, metricsCollector);
 
         var entered = new CountDownLatch(1);
         var firstExchange = MockServerWebExchange.from(
@@ -41,8 +43,8 @@ class InFlightLimitFilterTest {
             filter.filter(secondExchange, exchange -> Mono.empty()).block();
 
             assertEquals(429, secondExchange.getResponse().getStatusCode().value());
-            var rejectedCounter = registry.find("engine_rejected_total")
-                    .tag("reason", "in_flight_limit")
+            var rejectedCounter = registry.find(MetricsCollector.METRIC_ENGINE_REJECTED_TOTAL)
+                    .tag(MetricsCollector.TAG_REASON, MetricsCollector.REASON_IN_FLIGHT_LIMIT)
                     .counter();
             assertEquals(1.0, rejectedCounter == null ? 0.0 : rejectedCounter.count(), 0.0001);
         } finally {
@@ -55,7 +57,8 @@ class InFlightLimitFilterTest {
         var properties = new EngineLimitsProperties();
         properties.setMaxInFlight(1);
         var registry = new SimpleMeterRegistry();
-        var filter = new InFlightLimitFilter(properties, registry);
+        var metricsCollector = new MetricsCollector(registry);
+        var filter = new InFlightLimitFilter(properties, metricsCollector);
 
         var called = new AtomicBoolean(false);
         var exchange = MockServerWebExchange.from(

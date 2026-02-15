@@ -11,7 +11,8 @@ import reactor.core.publisher.Mono;
 import ro.dede.bidbridge.engine.domain.openrtb.BidRequest;
 import ro.dede.bidbridge.engine.domain.openrtb.BidResponse;
 import ro.dede.bidbridge.engine.normalization.BidRequestNormalizer;
-import ro.dede.bidbridge.engine.observability.RequestOutcomes;
+import ro.dede.bidbridge.engine.observability.MetricsCollector;
+import ro.dede.bidbridge.engine.observability.RequestOutcome;
 import ro.dede.bidbridge.engine.service.BidService;
 
 @RestController
@@ -34,7 +35,7 @@ public class BidController {
                         .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                         .body(response))
                 .switchIfEmpty(Mono.fromSupplier(() -> {
-                    exchange.getAttributes().put(RequestOutcomes.REQUEST_OUTCOME, RequestOutcomes.NO_BID_NO_FILL);
+                    exchange.getAttributes().put(MetricsCollector.ATTR_REQUEST_OUTCOME, RequestOutcome.NO_BID_NO_FILL);
                     return ResponseEntity.noContent()
                             .header(OpenRtbConstants.OPENRTB_VERSION_HEADER, OpenRtbConstants.OPENRTB_VERSION)
                             .build();
