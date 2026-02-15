@@ -47,8 +47,23 @@ Class diagram source: `architecture-class-diagram.puml`
 **Details**:
 
 - Accept OpenRTB 2.5/2.6 requests and respond with OpenRTB-compliant bid/no-bid payloads.
-- Primary response mapping: `200` (bid), `204` (no-bid), `400` (invalid input), `429` (in-flight limit), `503` (configuration failure), `500` (internal error).
+- Primary response mapping: `200` (bid), `204` (no-bid), `400` (invalid input), `429` (in-flight limit), `503` (
+  configuration failure), `500` (internal error).
 - Echo and propagate correlation headers used across engine and adapters (`X-Request-Id`, `X-Caller`).
+
+**Request Filter Pipeline (API sub-layer)**:
+
+- Effective order for inbound `/openrtb2/**` requests:
+    1. `EngineAuthFilter` (`@Order(Ordered.HIGHEST_PRECEDENCE + 5)`)
+        - Active only with `aws` profile and `engine.auth.enabled=true`
+        - Enforces `X-Api-Key`, returns `401` on missing/invalid key
+    2. `InFlightLimitFilter` (`@Order(Ordered.HIGHEST_PRECEDENCE + 10)`)
+        - Enforces `engine.limits.maxInFlight`
+        - Returns `429` and increments `engine_rejected_total{reason="in_flight_limit"}`
+    3. `RequestLoggingFilter` (default Spring order, after explicitly ordered filters)
+        - Adds/echoes `X-Request-Id`, echoes `X-Caller`
+        - Emits request outcome and latency metrics
+        - Emits request summary logs (excluding `/actuator` paths)
 
 ### Normalization Layer
 

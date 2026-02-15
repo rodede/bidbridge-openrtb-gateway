@@ -8,6 +8,7 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
+import ro.dede.bidbridge.engine.api.OpenRtbConstants;
 
 import java.util.UUID;
 
@@ -30,6 +31,9 @@ public class RequestLoggingFilter implements WebFilter {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+        if (!OpenRtbConstants.isOpenRtbBidRequestPath(exchange.getRequest().getPath().value())) {
+            return chain.filter(exchange);
+        }
         var incomingId = exchange.getRequest().getHeaders().getFirst(REQUEST_ID_HEADER);
         var requestId = (incomingId == null || incomingId.isBlank())
                 ? UUID.randomUUID().toString()
@@ -56,10 +60,7 @@ public class RequestLoggingFilter implements WebFilter {
                     if (!signal.isOnComplete() && !signal.isOnError()) {
                         return;
                     }
-                    var path = exchange.getRequest().getPath().value();
-                    if (path != null && path.startsWith("/actuator")) {
-                        return;
-                    }
+                    var completedPath = exchange.getRequest().getPath().value();
                     var durationMs = (System.nanoTime() - start) / 1_000_000L;
                     var status = exchange.getResponse().getStatusCode();
                     var statusValue = status == null ? 0 : status.value();
@@ -74,7 +75,7 @@ public class RequestLoggingFilter implements WebFilter {
                         }
                         MDC.put(CALLER_ATTR, callerValue);
                         log.info("request completed path={} status={} outcome={} caller={} durationMs={}",
-                                path,
+                                completedPath,
                                 statusValue == 0 ? "unknown" : statusValue,
                                 outcome.value(),
                                 callerValue,

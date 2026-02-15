@@ -16,7 +16,7 @@ import ro.dede.bidbridge.engine.observability.RequestOutcome;
 import ro.dede.bidbridge.engine.service.BidService;
 
 @RestController
-@RequestMapping("/openrtb2")
+@RequestMapping(OpenRtbConstants.OPENRTB_BASE_PATH)
 public class BidController {
     private final BidService bidService;
     private final BidRequestNormalizer bidRequestNormalizer;
@@ -26,7 +26,7 @@ public class BidController {
         this.bidRequestNormalizer = bidRequestNormalizer;
     }
 
-    @PostMapping("/bid")
+    @PostMapping(OpenRtbConstants.OPENRTB_BID_PATH)
     public Mono<ResponseEntity<BidResponse>> bid(@Valid @RequestBody BidRequest request, ServerWebExchange exchange) {
         // Map service outcome to OpenRTB HTTP status codes and include version header.
         return bidRequestNormalizer.normalize(request)

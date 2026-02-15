@@ -22,7 +22,6 @@ import java.util.concurrent.Semaphore;
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 10)
 public class InFlightLimitFilter implements WebFilter {
-    private static final String OPENRTB_PREFIX = "/openrtb2";
     private static final byte[] TOO_MANY_BYTES =
             "{\"error\":\"Too many requests\"}".getBytes(StandardCharsets.UTF_8);
 
@@ -37,8 +36,7 @@ public class InFlightLimitFilter implements WebFilter {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-        var path = exchange.getRequest().getPath().value();
-        if (!isLimitedPath(path)) {
+        if (!OpenRtbConstants.isOpenRtbBidRequestPath(exchange.getRequest().getPath().value())) {
             return chain.filter(exchange);
         }
         if (!semaphore.tryAcquire()) {
@@ -54,7 +52,4 @@ public class InFlightLimitFilter implements WebFilter {
                 .doFinally(signal -> semaphore.release());
     }
 
-    private boolean isLimitedPath(String path) {
-        return path != null && path.startsWith(OPENRTB_PREFIX);
-    }
 }

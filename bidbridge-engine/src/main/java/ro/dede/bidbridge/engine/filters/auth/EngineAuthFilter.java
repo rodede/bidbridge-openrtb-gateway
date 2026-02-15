@@ -25,7 +25,6 @@ import java.nio.charset.StandardCharsets;
 @ConditionalOnProperty(prefix = "engine.auth", name = "enabled", havingValue = "true")
 public class EngineAuthFilter implements WebFilter {
     private static final String BID_HEADER = "X-Api-Key";
-    private static final String OPENRTB_PREFIX = "/openrtb2";
     private static final byte[] UNAUTHORIZED_BYTES =
             "{\"error\":\"Unauthorized\"}".getBytes(StandardCharsets.UTF_8);
 
@@ -36,13 +35,16 @@ public class EngineAuthFilter implements WebFilter {
             this.bidApiKey = "";
             return;
         }
-        this.bidApiKey = requireValue(properties.getBidApiKey(), "engine.auth.bidApiKey");
+
+        if (properties.getBidApiKey() == null || properties.getBidApiKey().isBlank()) {
+            throw new IllegalStateException(" engine.auth.bidApiKey must be set when engine.auth.enabled=true");
+        }
+        this.bidApiKey = properties.getBidApiKey();
     }
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-        var path = exchange.getRequest().getPath().value();
-        if (!isOpenRtb(path)) {
+        if (!OpenRtbConstants.isOpenRtbBidRequestPath(exchange.getRequest().getPath().value())) {
             return chain.filter(exchange);
         }
         var provided = exchange.getRequest().getHeaders().getFirst(BID_HEADER);
@@ -57,14 +59,4 @@ public class EngineAuthFilter implements WebFilter {
         return response.writeWith(Mono.just(buffer));
     }
 
-    private boolean isOpenRtb(String path) {
-        return path != null && path.startsWith(OPENRTB_PREFIX);
-    }
-
-    private String requireValue(String value, String propertyName) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalStateException(propertyName + " must be set when engine.auth.enabled=true");
-        }
-        return value;
-    }
 }
