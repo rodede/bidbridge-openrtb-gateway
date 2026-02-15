@@ -53,6 +53,39 @@ class InFlightLimitFilterTest {
     }
 
     @Test
+    void rejectsWhenInFlightLimitReachedOnOpenRtbSubpath() throws Exception {
+        var properties = new EngineLimitsProperties();
+        properties.setMaxInFlight(1);
+        var registry = new SimpleMeterRegistry();
+        var metricsCollector = new MetricsCollector(registry);
+        var filter = new InFlightLimitFilter(properties, metricsCollector);
+
+        var entered = new CountDownLatch(1);
+        var firstExchange = MockServerWebExchange.from(
+                MockServerHttpRequest.post("/openrtb2/simulator/bid").build()
+        );
+        WebFilterChain blockingChain = exchange -> Mono.<Void>never()
+                .doOnSubscribe(subscription -> entered.countDown());
+        Disposable first = filter.filter(firstExchange, blockingChain).subscribe();
+        try {
+            assertTrue(entered.await(1, TimeUnit.SECONDS));
+
+            var secondExchange = MockServerWebExchange.from(
+                    MockServerHttpRequest.post("/openrtb2/partner/bid").build()
+            );
+            filter.filter(secondExchange, exchange -> Mono.empty()).block();
+
+            assertEquals(429, secondExchange.getResponse().getStatusCode().value());
+            var rejectedCounter = registry.find(MetricsCollector.METRIC_ENGINE_REJECTED_TOTAL)
+                    .tag(MetricsCollector.TAG_REASON, MetricsCollector.REASON_IN_FLIGHT_LIMIT)
+                    .counter();
+            assertEquals(1.0, rejectedCounter == null ? 0.0 : rejectedCounter.count(), 0.0001);
+        } finally {
+            first.dispose();
+        }
+    }
+
+    @Test
     void skipsNonOpenRtbPaths() {
         var properties = new EngineLimitsProperties();
         properties.setMaxInFlight(1);

@@ -70,6 +70,19 @@ class EngineAuthFilterTest {
     }
 
     @Test
+    void rejectsOpenRtbSubpathWithoutApiKey() {
+        webTestClient.post()
+                .uri("/openrtb2/simulator/bid")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("{}")
+                .exchange()
+                .expectStatus().isUnauthorized()
+                .expectHeader().valueEquals("X-OpenRTB-Version", "2.6")
+                .expectBody()
+                .jsonPath("$.error").isEqualTo("Unauthorized");
+    }
+
+    @Test
     void allowsBidWithApiKey() {
         var request = new BidRequest("req-1", List.of(new Imp("1", null, null, null, null, null, null)),
                 new ro.dede.bidbridge.engine.domain.openrtb.Site(null), null, null, null, null, null, null);

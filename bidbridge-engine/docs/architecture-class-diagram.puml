@@ -31,6 +31,7 @@ package "Service Orchestration Layer" {
 
 package "Adapter Layer" {
   class AdapterRegistry
+  class AdapterProperties
   interface BidderAdapter
   class SimulatorAdapter
   class SimulatorHttpAdapter
@@ -71,6 +72,7 @@ DefaultRulesEvaluator --> RulesProperties
 DefaultRulesEvaluator --> RulesResult
 
 AdapterRegistry --> BidderAdapter
+AdapterRegistry --> AdapterProperties
 BidderAdapter <|.. SimulatorAdapter
 BidderAdapter <|.. AbstractHttpAdapter
 AbstractHttpAdapter <|-- SimulatorHttpAdapter

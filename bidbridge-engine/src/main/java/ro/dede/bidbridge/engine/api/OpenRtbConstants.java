@@ -12,7 +12,7 @@ public final class OpenRtbConstants {
         if (path == null) {
             return false;
         }
-        return path.equals(OPENRTB_BASE_PATH + OPENRTB_BID_PATH);
+        return path.equals(OPENRTB_BASE_PATH) || path.startsWith(OPENRTB_BASE_PATH + "/");
     }
 
     private OpenRtbConstants() {
