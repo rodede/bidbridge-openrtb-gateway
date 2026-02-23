@@ -1,5 +1,15 @@
 # Vision and Scope
 
+## Current Project State (February 2026)
+
+This document captures the original direction of the project.
+
+The project is now in archive/maintenance mode:
+- No customer rollout is planned.
+- `bidbridge-simulator` is deployed in AWS but has no active usage and is retained as a sample/reference.
+- `bidbridge-loadgen` is working and remains usable for testing.
+- `bidbridge-engine` remains at a minimal structure and is not deployed.
+
 ## Vision
 
 Build a lightweight, reliable, and extensible OpenRTB bidding gateway that enables publishers and platforms to integrate multiple demand sources through a unified, low-latency interface.

@@ -2,6 +2,12 @@
 
 Core OpenRTB bidder gateway service for BidBridge application.
 
+## Status
+
+- Minimal structure/MVP foundation in place.
+- Not deployed.
+- No further product development planned in this repository.
+
 ## Scope
 
 - Exposes `POST /openrtb2/bid`

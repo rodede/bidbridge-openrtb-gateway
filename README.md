@@ -4,6 +4,15 @@ BidBridge is a lightweight, low-latency OpenRTB 2.6 bidding gateway built in Jav
 
 It provides a unified layer for normalizing bid requests, applying business rules, and routing traffic to multiple demand sources.
 
+## Project Status
+
+This project is in archive/maintenance mode.
+
+- No further product development is planned.
+- `bidbridge-simulator` is deployed in AWS but currently has no real traffic usage; it can be reused as a sample/reference service.
+- `bidbridge-loadgen` is working and can be used for local/integration/performance testing.
+- `bidbridge-engine` currently has a minimal structure and is not deployed.
+
 ## Modules
 
 This repository is organized as a multi-module Maven project.
@@ -70,9 +79,8 @@ Expected outcomes: `200` (bid), `204` (no-bid), or `400` (invalid request).
 - Simulator actuator: `GET /actuator/health`, `GET /actuator/info`, `GET /actuator/prometheus`
 - Dashboard/config assets live under your monitoring repo/config path
 
-## Status
+## Status Summary
 
-Project is under active development, focused on:
-- `bidbridge-engine` (primary)
-- `bidbridge-simulator` (supporting test endpoint)
-- `bidbridge-loadgen` (integration/load tooling)
+- `bidbridge-engine`: MVP/minimal structure, not deployed.
+- `bidbridge-simulator`: deployed in AWS, no current usage, useful as reference/sample.
+- `bidbridge-loadgen`: operational and ready for testing workflows.

@@ -1,5 +1,14 @@
 # Development Roadmap
 
+## Current Project State (February 2026)
+
+Roadmap execution has stopped and this project is in archive/maintenance mode.
+
+Current snapshot:
+- `bidbridge-simulator`: deployed in AWS, no active usage, retained as sample/reference.
+- `bidbridge-loadgen`: working and usable.
+- `bidbridge-engine`: minimal structure only, not deployed.
+
 ## Phase 1 — MVP
 
 - HTTP endpoint

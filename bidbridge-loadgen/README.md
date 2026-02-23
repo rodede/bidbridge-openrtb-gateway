@@ -2,6 +2,11 @@
 
 Minimal OpenRTB load generator for integration and performance testing.
 
+## Status
+
+- Working as expected.
+- Usable for local/integration/performance load testing as-is.
+
 It reads a single JSON request or a JSONL replay file, schedules sends at a target QPS,
 caps the number of concurrent in-flight requests, and prints basic status/latency stats at the end.
 

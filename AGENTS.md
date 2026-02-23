@@ -40,10 +40,11 @@ Use `docs/` for repo-wide context, then use module-local guidance.
 
 ## Project Priorities
 
-- This is a personal learning/playground project.
-- `bidbridge-engine` is the primary service and should receive most design/implementation focus.
-- `bidbridge-simulator` is a supporting test endpoint for DSP behavior and third-party communication scenarios.
-- Keep simulator scope intentionally minimal; avoid complex features that do not improve engine testing.
+- This project is in archive/maintenance mode; no new product development is planned.
+- Prefer documentation/status clarity updates over feature work.
+- `bidbridge-simulator` is deployed in AWS with no active usage and can be treated as sample/reference.
+- `bidbridge-loadgen` is working and may still be used for tests.
+- `bidbridge-engine` remains minimal and not deployed.
 
 ## AWS Considerations
 

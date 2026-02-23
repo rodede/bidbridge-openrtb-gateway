@@ -2,6 +2,12 @@
 
 Minimal OpenRTB bidder simulator used for local and integration testing.
 
+## Status
+
+- Deployed in AWS.
+- No active production/partner usage.
+- Kept as a sample/reference simulator for future experiments in other projects.
+
 ## Documentation boundaries
 
 This file documents simulator behavior and usage:
